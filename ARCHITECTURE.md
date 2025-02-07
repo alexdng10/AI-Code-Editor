@@ -37,7 +37,7 @@ The project structure is as follows:
 │   ├── query.js
 │   ├── style.js
 │   └── theme.js
-└── vendor/
+├── vendor/
 ```
 
 ## Other Files
@@ -85,6 +85,11 @@ The project structure is as follows:
         *   `var sqliteAdditionalFiles;`: Defines a variable `sqliteAdditionalFiles`. This variable will store the additional files for SQLite.
         *   `var languages = {};`: Defines a variable `languages` as an empty object. This object will store the language data.
         *   `var layoutConfig = { ... };`: Defines a variable `layoutConfig` that stores the configuration for the Golden Layout. This configuration defines the layout of the IDE, including the source code editor, standard input editor, and standard output editor.
+        *   `function openFile(content, filename)`: Opens a file in the editor.
+        *   `function saveFile(content, filename)`: Saves the content of the editor to a file.
+        *   `function setFontSizeForAllEditors(fontSize)`: Sets the font size for all editors.
+        *   `const EXTENSIONS_TABLE`: A table that maps file extensions to language IDs.
+        *   `function getLanguageForExtension(extension)`: Returns the language ID for a given file extension.
 *   **`css/ide.css`**: Contains basic styling for the IDE.
 *   **`js/electron.js`**: Determines if the application is running in Electron environment.
     *   **Functionality:**
@@ -172,6 +177,3 @@ To implement the chat interface with AI assistance, follow these steps:
 </final_file_content>
 
 IMPORTANT: For any future changes to this file, use the final_file_content shown above as your reference. This content reflects the current state of the file, including any auto-formatting (e.g., if you used single quotes but the formatter converted them to double quotes). Always base your SEARCH/REPLACE operations on this final version to ensure accuracy.
-
-
-
