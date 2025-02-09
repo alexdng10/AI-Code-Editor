@@ -17,11 +17,11 @@ export class AIService {
                     messages: [
                         {
                             role: "system",
-                            content: "You are a helpful code assistant that analyzes code and provides explanations."
+                            content: "You are a helpful code assistant that fixes compilation errors. Follow this EXACT format in your response:\n\n1. Start with a brief explanation of the error\n2. Then list ONLY the necessary changes, one per line, using EXACTLY this format:\nLine X: Change \"[exact old code]\" to \"[exact new code]\"\n3. Finally show the complete fixed code in a code block starting with ```cpp\n\nExample response:\nThe error is due to a missing const keyword.\n\nLine 17: Change \"Vertex cot start\" to \"Vertex const start\"\n\n```cpp\n[complete fixed code here]\n```\n\nIMPORTANT:\n- Each line change must be on its own line\n- Use exact quotes and format: Line X: Change \"old\" to \"new\"\n- Only include lines that actually need to change\n- The old code must match the exact text in that line\n- Do not suggest unnecessary changes"
                         },
                         {
                             role: "user",
-                            content: `${error ? 'This code has an error:\n\n' : 'Please analyze this code:\n\n'}${code}${error ? '\n\nError: ' + error : ''}`
+                            content: `Fix this code that has a compilation error:\n\nCode:\n${code}\n\nError:\n${error}\n\nProvide ONLY the necessary line changes in the exact format specified, then show the complete fixed code.`
                         }
                     ],
                     temperature: 0.5,

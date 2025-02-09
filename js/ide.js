@@ -157,9 +157,9 @@ function handleResult(data) {
 
     stdoutEditor.setValue(output);
 
-    // Handle compilation errors with AI assistance
+    // Only show the suggest fix button for compilation errors
     if (status.id === 6) { // Compilation Error
-        chatInterface?.handleCompilationError(sourceEditor.getValue(), compileOutput);
+        chatInterface?.showSuggestFixButton(sourceEditor.getValue(), compileOutput);
     }
 
     $runBtn.removeClass("disabled");
@@ -646,6 +646,71 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     document.getElementById("judge0-open-file-btn").addEventListener("click", openAction);
     document.getElementById("judge0-save-btn").addEventListener("click", saveAction);
+
+    // Listen for code fix events from chat interface
+    window.addEventListener('applyCodeFix', (event) => {
+        if (event.detail) {
+            const { lineChanges, fullCode } = event.detail;
+            
+            if (lineChanges && lineChanges.length > 0) {
+                // Apply specific line changes
+                const model = sourceEditor.getModel();
+                const edits = [];
+                
+                for (const change of lineChanges) {
+                    const lineNumber = change.lineNumber;
+                    const lineContent = model.getLineContent(lineNumber);
+                    
+                    console.log('Processing line change:', {
+                        lineNumber,
+                        oldContent: lineContent,
+                        oldText: change.oldText,
+                        newText: change.newText
+                    });
+                    
+                    // Find the start and end positions of the old text in the line
+                    const startIndex = lineContent.indexOf(change.oldText);
+                    if (startIndex !== -1) {
+                        const range = new monaco.Range(
+                            lineNumber,
+                            startIndex + 1,
+                            lineNumber,
+                            startIndex + change.oldText.length + 1
+                        );
+                        
+                        edits.push({
+                            range: range,
+                            text: change.newText
+                        });
+                        
+                        console.log('Created edit:', {
+                            range: range,
+                            text: change.newText
+                        });
+                    }
+                }
+                
+                if (edits.length > 0) {
+                    // Apply all edits in a single operation
+                    sourceEditor.executeEdits('ai-fix', edits);
+                    console.log('Applied edits:', edits);
+                } else {
+                    // Fallback to full code replacement if no edits were created
+                    console.log('No edits created, falling back to full code replacement');
+                    sourceEditor.setValue(fullCode);
+                }
+            } else if (fullCode) {
+                // Fallback to full code replacement if line changes parsing failed
+                sourceEditor.setValue(fullCode);
+            }
+            
+            // Run the code to check if the fix worked
+            run();
+            
+            // Hide the suggest fix button since we've applied a fix
+            chatInterface?.hideCompilationError();
+        }
+    });
 
     window.onmessage = function (e) {
         if (!e.data) {

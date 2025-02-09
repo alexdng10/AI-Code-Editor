@@ -7,6 +7,8 @@ export class ChatInterface {
         this.container = null;
         this.messagesContainer = null;
         this.inputContainer = null;
+        this.lastError = null;
+        this.lastErrorCode = null;
     }
 
     initialize(container) {
@@ -20,9 +22,14 @@ export class ChatInterface {
             <div class="chat-container">
                 <div class="chat-header">
                     Code Assistant
-                    <button class="code-assistant-button" title="Change API Key">
-                        API
-                    </button>
+                    <div class="chat-header-buttons">
+                        <button class="suggest-fix-button" title="Get AI suggestion to fix error" style="display: none;">
+                            Suggest Fix
+                        </button>
+                        <button class="code-assistant-button" title="Change API Key">
+                            API
+                        </button>
+                    </div>
                 </div>
                 <div class="chat-messages">
                     <div class="chat-placeholder">
@@ -37,11 +44,18 @@ export class ChatInterface {
         `;
 
         this.messagesContainer = this.container.querySelector('.chat-messages');
+        
         // Add change key button handler
         const changeKeyButton = this.container.querySelector('.code-assistant-button');
         changeKeyButton.addEventListener('click', () => {
             localStorage.removeItem('groq_api_key');
             this.showApiKeyPrompt();
+        });
+
+        // Add suggest fix button handler
+        const suggestFixButton = this.container.querySelector('.suggest-fix-button');
+        suggestFixButton.addEventListener('click', () => {
+            this.suggestAiFix();
         });
 
         const input = this.container.querySelector('.chat-input');
@@ -191,15 +205,159 @@ export class ChatInterface {
         }
     }
 
-    async handleCompilationError(code, error) {
+    showSuggestFixButton(code, error) {
         if (!this.aiService) return;
+        
+        // Store the error and code for the suggest fix feature
+        this.lastError = error;
+        this.lastErrorCode = code;
+        
+        // Show the suggest fix button
+        const suggestFixButton = this.container.querySelector('.suggest-fix-button');
+        if (suggestFixButton) {
+            suggestFixButton.style.display = 'inline-flex';
+        }
+    }
+
+    hideCompilationError() {
+        // Hide the suggest fix button when there's no error
+        const suggestFixButton = this.container.querySelector('.suggest-fix-button');
+        if (suggestFixButton) {
+            suggestFixButton.style.display = 'none';
+        }
+        this.lastError = null;
+        this.lastErrorCode = null;
+    }
+
+    async suggestAiFix() {
+        if (!this.aiService || !this.lastError || !this.lastErrorCode) return;
 
         try {
-            const response = await this.aiService.getCodeAnalysis(code, error);
-            this.addMessage('assistant', response);
+            // Get AI suggestion for the fix
+            const response = await this.aiService.getCodeAnalysis(this.lastErrorCode, this.lastError);
+            
+            // Create a message with the suggested fix and action buttons
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            
+            // Extract line changes and code from the response
+            const lines = response.split('\n');
+            let explanation = '';
+            let lineChanges = [];
+            let suggestedCode = '';
+            
+            // Parse the response to extract line changes and code
+            let inCodeBlock = false;
+            for (const line of lines) {
+                if (line.startsWith('```')) {
+                    inCodeBlock = !inCodeBlock;
+                    continue;
+                }
+                
+                if (inCodeBlock) {
+                    suggestedCode += line + '\n';
+                    continue;
+                }
+
+                // Look for line number references (e.g., "Line 17:" or "On line 17,")
+                const lineMatch = line.match(/(?:line|Line)\s+(\d+)[:\s]/);
+                if (lineMatch) {
+                    const lineNum = parseInt(lineMatch[1]);
+                    lineChanges.push({
+                        lineNum,
+                        description: line
+                    });
+                } else if (line.trim()) {
+                    explanation += line + '\n';
+                }
+            }
+
+            suggestedCode = suggestedCode.trim();
+            explanation = explanation.trim();
+
+            // Create the message content with interactive line changes
+            let messageContent = `
+                <div class="message-section">
+                    <h2 class="message-heading-2">Suggested Fix</h2>
+                    <p class="message-paragraph">${explanation}</p>
+                    ${lineChanges.map(change => `
+                        <div class="line-change">
+                            <div class="line-number">Line ${change.lineNum}</div>
+                            <div class="line-description">${change.description}</div>
+                        </div>
+                    `).join('')}
+                    <div class="code-block cpp">
+                        <div class="code-header">C++</div>
+                        <pre><code>${suggestedCode}</code></pre>
+                    </div>
+                    <div class="fix-actions">
+                        <button class="apply-fix-button">Apply Fix</button>
+                        <button class="cancel-fix-button">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            messageDiv.innerHTML = messageContent;
+            
+            // Add event listeners for the action buttons
+            if (suggestedCode) {
+                const applyButton = messageDiv.querySelector('.apply-fix-button');
+                const cancelButton = messageDiv.querySelector('.cancel-fix-button');
+                
+                applyButton.addEventListener('click', () => {
+                    // Parse line changes from the response
+                    const lineChanges = [];
+                    const allLines = response.split('\n');
+                    
+                    console.log('Parsing response for changes...');
+                    
+                    // First, find the line changes section
+                    for (const line of allLines) {
+                        // Skip empty lines and code blocks
+                        if (!line.trim() || line.startsWith('```')) continue;
+                        
+                        // Look for line changes in the exact format specified
+                        const lineMatch = line.match(/Line\s+(\d+):\s*Change\s*"([^"]+)"\s*to\s*"([^"]+)"/);
+                        if (lineMatch) {
+                            const change = {
+                                lineNumber: parseInt(lineMatch[1]),
+                                oldText: lineMatch[2].trim(),
+                                newText: lineMatch[3].trim()
+                            };
+                            console.log('Found line change:', change);
+                            lineChanges.push(change);
+                        }
+                    }
+                    
+                    console.log('Found line changes:', lineChanges);
+                    
+                    // Emit the event with line changes or fall back to full code
+                    const event = new CustomEvent('applyCodeFix', {
+                        detail: lineChanges.length > 0 ? {
+                            lineChanges: lineChanges,
+                            fullCode: suggestedCode // Include as fallback
+                        } : {
+                            fullCode: suggestedCode
+                        }
+                    });
+                    window.dispatchEvent(event);
+                    
+                    // Hide the action buttons after applying
+                    messageDiv.querySelector('.fix-actions').style.display = 'none';
+                });
+                
+                cancelButton.addEventListener('click', () => {
+                    // Just hide the action buttons
+                    messageDiv.querySelector('.fix-actions').style.display = 'none';
+                });
+            }
+            
+            this.messagesContainer.appendChild(messageDiv);
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            
         } catch (error) {
-            console.error('Error analyzing compilation error:', error);
-            this.addMessage('assistant', 'Sorry, I encountered an error analyzing the compilation error.');
+            console.error('Error getting AI fix suggestion:', error);
+            this.addMessage('assistant', 'Sorry, I encountered an error generating the fix suggestion.');
         }
     }
 }
