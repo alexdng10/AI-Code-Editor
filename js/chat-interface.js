@@ -20,8 +20,8 @@ export class ChatInterface {
             <div class="chat-container">
                 <div class="chat-header">
                     Code Assistant
-                    <button class="change-key-button" title="Change API Key">
-                        <span class="key-icon">🔑</span>
+                    <button class="code-assistant-button" title="Change API Key">
+                        API
                     </button>
                 </div>
                 <div class="chat-messages">
@@ -38,7 +38,7 @@ export class ChatInterface {
 
         this.messagesContainer = this.container.querySelector('.chat-messages');
         // Add change key button handler
-        const changeKeyButton = this.container.querySelector('.change-key-button');
+        const changeKeyButton = this.container.querySelector('.code-assistant-button');
         changeKeyButton.addEventListener('click', () => {
             localStorage.removeItem('groq_api_key');
             this.showApiKeyPrompt();
