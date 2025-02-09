@@ -18,7 +18,12 @@ export class ChatInterface {
     setupUI() {
         this.container.innerHTML = `
             <div class="chat-container">
-                <div class="chat-header">Code Assistant</div>
+                <div class="chat-header">
+                    Code Assistant
+                    <button class="change-key-button" title="Change API Key">
+                        <span class="key-icon">🔑</span>
+                    </button>
+                </div>
                 <div class="chat-messages">
                     <div class="chat-placeholder">
                         Ask questions about your code or get help with programming
@@ -32,9 +37,15 @@ export class ChatInterface {
         `;
 
         this.messagesContainer = this.container.querySelector('.chat-messages');
+        // Add change key button handler
+        const changeKeyButton = this.container.querySelector('.change-key-button');
+        changeKeyButton.addEventListener('click', () => {
+            localStorage.removeItem('groq_api_key');
+            this.showApiKeyPrompt();
+        });
+
         const input = this.container.querySelector('.chat-input');
         const sendButton = this.container.querySelector('.chat-send-button');
-
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -50,7 +61,7 @@ export class ChatInterface {
     }
 
     loadApiKey() {
-        const apiKey = localStorage.getItem('openai_api_key');
+        const apiKey = localStorage.getItem('groq_api_key');
         if (apiKey) {
             this.aiService = new AIService(apiKey);
         } else {
@@ -61,10 +72,11 @@ export class ChatInterface {
     showApiKeyPrompt() {
         this.container.innerHTML = `
             <div class="api-key-container">
-                <h3>OpenAI API Key Required</h3>
-                <p>Please enter your OpenAI API key to use the Code Assistant</p>
-                <input type="password" class="api-key-input" placeholder="Enter your OpenAI API key">
+                <h3>Groq API Key Required</h3>
+                <p>Please enter your Groq API key to use the Code Assistant</p>
+                <input type="password" class="api-key-input" placeholder="Enter your Groq API key">
                 <button class="save-key-button">Save Key</button>
+                <p class="api-key-help">Get your API key at <a href="https://wow.groq.com" target="_blank">wow.groq.com</a></p>
             </div>
         `;
 
@@ -74,7 +86,7 @@ export class ChatInterface {
         saveButton.addEventListener('click', () => {
             const key = input.value.trim();
             if (key) {
-                localStorage.setItem('openai_api_key', key);
+                localStorage.setItem('groq_api_key', key);
                 this.aiService = new AIService(key);
                 this.setupUI();
             }
