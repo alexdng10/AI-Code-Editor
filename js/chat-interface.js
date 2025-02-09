@@ -234,7 +234,7 @@ export class ChatInterface {
 
         try {
             // Get AI suggestion for the fix
-            const response = await this.aiService.getCodeAnalysis(this.lastErrorCode, this.lastError);
+            const response = await this.aiService.getCodeAnalysis(this.lastErrorCode, this.lastError, 'fix');
             
             // Create a message with the suggested fix and action buttons
             const messageDiv = document.createElement('div');
