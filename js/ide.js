@@ -1,4 +1,5 @@
 import { IS_PUTER } from "./puter.js";
+import { ChatInterface } from "./chat-interface.js";
 
 const API_KEY = ""; // Get yours at https://platform.sulu.sh/apis/judge0
 
@@ -30,6 +31,7 @@ const MAX_PROBE_REQUESTS = 50;
 var fontSize = 13;
 
 var layout;
+var chatInterface;
 
 var sourceEditor;
 var stdinEditor;
@@ -84,6 +86,12 @@ var layoutConfig = {
                     readOnly: true
                 }
             }]
+        }, {
+            type: "component",
+            componentName: "chat",
+            width: 25,
+            title: "Code Assistant",
+            isClosable: false
         }]
     }]
 };
@@ -148,6 +156,11 @@ function handleResult(data) {
     const output = [compileOutput, stdout].join("\n").trim();
 
     stdoutEditor.setValue(output);
+
+    // Handle compilation errors with AI assistance
+    if (status.id === 6) { // Compilation Error
+        chatInterface?.handleCompilationError(sourceEditor.getValue(), compileOutput);
+    }
 
     $runBtn.removeClass("disabled");
 
@@ -555,6 +568,25 @@ document.addEventListener("DOMContentLoaded", async function () {
             });
 
             sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
+
+            // Add context menu for code selection chat
+            sourceEditor.addAction({
+                id: 'chat-with-code',
+                label: 'Chat about this code',
+                contextMenuGroupId: 'navigation',
+                run: function(editor) {
+                    const selection = editor.getSelection();
+                    const selectedCode = editor.getModel().getValueInRange(selection);
+                    if (selectedCode) {
+                        chatInterface?.handleCodeSelection(selectedCode);
+                    }
+                }
+            });
+        });
+
+        layout.registerComponent("chat", function (container, state) {
+            chatInterface = new ChatInterface();
+            chatInterface.initialize(container.getElement()[0]);
         });
 
         layout.registerComponent("stdin", function (container, state) {
