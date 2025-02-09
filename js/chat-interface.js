@@ -112,16 +112,68 @@ export class ChatInterface {
     addMessage(role, content) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}`;
-        messageDiv.textContent = content;
-        
-        // If content contains code blocks, format them
-        if (content.includes('```')) {
-            const formattedContent = content.replace(/```([\s\S]*?)```/g, (match, code) => {
-                return `<div class="code-preview">${code.trim()}</div>`;
-            });
-            messageDiv.innerHTML = formattedContent;
-        }
 
+        // Format headers (##, ###) and handle numbered headings
+        let headingCounter = 0;
+        let formattedContent = content.replace(/^(#{2,3})\s+(.+)$/gm, (match, hashes, text) => {
+            const level = hashes.length;
+            // Only increment counter for level 2 headings
+            if (level === 2) {
+                headingCounter++;
+                return `<h${level} class="message-heading-${level}">${headingCounter}. ${text}</h${level}>`;
+            }
+            return `<h${level} class="message-heading-${level}">${text}</h${level}>`;
+        });
+
+        // Format bold text (**)
+        formattedContent = formattedContent.replace(/\*\*([^*]+)\*\*/g, (match, text) => 
+            `<strong>${text}</strong>`
+        );
+
+        // Format bullet points (*) - ensure they're on new lines
+        formattedContent = formattedContent.replace(/^\*\s+(.+)$/gm, (match, text) => {
+            // Split text if it contains multiple sentences
+            const sentences = text.split(/(?<=\.) /);
+            return sentences.map(sentence => `<li>${sentence.trim()}</li>`).join('\n');
+        });
+
+        // Wrap bullet points in ul with proper spacing
+        formattedContent = formattedContent.replace(/(<li>.*?<\/li>\n?)+/g, match => 
+            `<ul class="message-list">\n${match}</ul>\n`
+        );
+
+        // Format code blocks with language support
+        formattedContent = formattedContent.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+            const language = lang || '';
+            return `<div class="code-block ${language}"><div class="code-header">${language}</div><pre><code>${code.trim()}</code></pre></div>`;
+        });
+
+        // Format inline code
+        formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+        // Format numbered lists (1., 2., etc.)
+        formattedContent = formattedContent.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+        formattedContent = formattedContent.replace(/(<li>.*?<\/li>\n?)+/g, match => 
+            `<ol class="message-list">${match}</ol>`
+        );
+
+        // Format sections
+        formattedContent = formattedContent.split(/(?=##\s)/).map(section => {
+            if (section.trim()) {
+                return `<div class="message-section">${section}</div>`;
+            }
+            return section;
+        }).join('');
+
+        // Add line breaks for paragraphs (but not inside code blocks or lists)
+        formattedContent = formattedContent.split(/\n\n+/).map(para => {
+            if (!para.includes('code-block') && !para.includes('<li>')) {
+                return `<p class="message-paragraph">${para.trim()}</p>`;
+            }
+            return para;
+        }).join('');
+
+        messageDiv.innerHTML = formattedContent;
         this.messagesContainer.appendChild(messageDiv);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
         this.messages.push({ role, content });
