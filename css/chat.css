@@ -740,3 +740,73 @@ strong {
   }
   
   
+  /* ============================================= */
+/* 1) Override negative offsets for <ol> items   */
+/* ============================================= */
+.message ol > li {
+    /* Ensure we don’t inherit flex or negative offsets */
+    display: block !important;
+    position: relative !important;
+  
+    /* Enough padding for "1." */
+    padding-left: 1.8em !important;
+  
+    /* Keep them spaced nicely */
+    margin-bottom: 8px !important;
+    line-height: 1.4 !important;
+  
+    /* Remove baseline alignment or min-height from earlier rules */
+    align-items: normal !important;
+    min-height: auto !important;
+  }
+  
+  .message ol > li::before {
+    /* Make the counter “1.” appear as a single string */
+    content: counter(item) ". ";
+  
+    /* Overwrite any negative left offset and forced widths */
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: inline-block !important;
+    width: auto !important;
+  
+    /* Keep “1.” on one line */
+    white-space: nowrap !important;
+    text-align: left !important;
+  
+    /* Basic styling for your bullet/number */
+    color: #4B4BF7 !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    line-height: 1.4 !important;
+    counter-increment: item;
+  }
+  
+  /* ====================================== */
+  /* 2) Force normal wrapping of text/code  */
+  /* ====================================== */
+  .message {
+    /* so text/code never bleeds outside .message */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    max-width: 85%; /* or 100% if you want full width */
+    box-sizing: border-box;
+  }
+  
+  /* 3) For wide code blocks, allow horizontal scroll instead of overflow */
+  .message .code-block {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  
+  /* 4) Ensure .chat-messages itself doesn’t clip the message content */
+  .chat-messages {
+    overflow-y: auto;
+    overflow-x: hidden; /* or 'auto' if you prefer horizontal scrolling here */
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
