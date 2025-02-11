@@ -205,6 +205,125 @@ export class ChatInterface {
         }
     }
 
+    async handleCodeEdit(selectedCode, selection) {
+        if (!this.aiService) return;
+
+        // First, add the user's code as a message
+        this.addMessage('user', `Please help me improve this code:\n\n\`\`\`\n${selectedCode}\n\`\`\``);
+
+        try {
+            const response = await this.aiService.getCodeEdit(selectedCode, selection);
+            
+            // Create a message with the suggested edits and action buttons
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+            
+            // Extract line changes and code from the response
+            const lines = response.split('\n');
+            let explanation = '';
+            let lineChanges = [];
+            let suggestedCode = '';
+            
+            // Parse the response to extract line changes and code
+            let inCodeBlock = false;
+            for (const line of lines) {
+                if (line.startsWith('```')) {
+                    inCodeBlock = !inCodeBlock;
+                    continue;
+                }
+                
+                if (inCodeBlock) {
+                    suggestedCode += line + '\n';
+                    continue;
+                }
+
+                // Look for line changes in the format "Line X: Change "old" to "new""
+                const changeMatch = line.match(/Line\s+(\d+):\s*Change\s*"([^"]+)"\s*to\s*"([^"]+)"/);
+                if (changeMatch) {
+                    lineChanges.push({
+                        lineNumber: parseInt(changeMatch[1]),
+                        oldText: changeMatch[2].trim(),
+                        newText: changeMatch[3].trim()
+                    });
+                } else if (line.trim()) {
+                    explanation += line + '\n';
+                }
+            }
+
+            suggestedCode = suggestedCode.trim();
+            explanation = explanation.trim();
+
+            // Create the message content with interactive line changes
+            let messageContent = `
+                <div class="message-section">
+                    <h2 class="message-heading-2">Suggested Improvements</h2>
+                    <p class="message-paragraph">${explanation}</p>
+                    ${lineChanges.length > 0 ? `
+                        <div class="line-changes-container">
+                            <h3 class="message-heading-3">Specific Changes:</h3>
+                            ${lineChanges.map(change => `
+                                <div class="line-change">
+                                    <div class="line-number">Line ${change.lineNumber}</div>
+                                    <div class="line-description">
+                                        <div class="old-text">- "${change.oldText}"</div>
+                                        <div class="new-text">+ "${change.newText}"</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                    <div class="code-block">
+                        <div class="code-header">Modified Code</div>
+                        <pre><code>${suggestedCode}</code></pre>
+                    </div>
+                    <div class="edit-actions">
+                        <button class="apply-edit-button">Apply Changes</button>
+                        <button class="cancel-edit-button">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            messageDiv.innerHTML = messageContent;
+            
+            // Add event listeners for the action buttons
+            if (suggestedCode) {
+                const applyButton = messageDiv.querySelector('.apply-edit-button');
+                const cancelButton = messageDiv.querySelector('.cancel-edit-button');
+                
+                applyButton.addEventListener('click', () => {
+                    // Emit event with line changes and full code
+                    const event = new CustomEvent('applyCodeFix', {
+                        detail: {
+                            lineChanges: lineChanges,
+                            fullCode: suggestedCode // Include as fallback
+                        }
+                    });
+                    window.dispatchEvent(event);
+                    
+                    // Hide the action buttons after applying
+                    messageDiv.querySelector('.edit-actions').style.display = 'none';
+                    
+                    // Add confirmation message
+                    this.addMessage('assistant', 'Changes applied successfully. You can continue editing or ask more questions.');
+                });
+                
+                cancelButton.addEventListener('click', () => {
+                    // Hide the action buttons
+                    messageDiv.querySelector('.edit-actions').style.display = 'none';
+                    // Add cancellation message
+                    this.addMessage('assistant', 'Changes cancelled. Let me know if you want to try something else.');
+                });
+            }
+            
+            this.messagesContainer.appendChild(messageDiv);
+            this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+            
+        } catch (error) {
+            console.error('Error getting code edit suggestion:', error);
+            this.addMessage('assistant', 'Sorry, I encountered an error generating the edit suggestion.');
+        }
+    }
+
     showSuggestFixButton(code, error) {
         if (!this.aiService) return;
         

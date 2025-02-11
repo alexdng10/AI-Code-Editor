@@ -570,16 +570,127 @@ document.addEventListener("DOMContentLoaded", async function () {
             sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
 
             // Add context menu for code selection chat
-            sourceEditor.addAction({
-                id: 'chat-with-code',
-                label: 'Chat about this code',
-                contextMenuGroupId: 'navigation',
-                run: function(editor) {
-                    const selection = editor.getSelection();
-                    const selectedCode = editor.getModel().getValueInRange(selection);
+            // Add edit button widget
+            let editButtonWidget = null;
+
+            function createWidget(selection) {
+                const widget = {
+                    domNode: createActionButtons(selection),
+                    getId: () => 'code-edit-button',
+                    getDomNode: function() { return this.domNode; },
+                    getPosition: () => {
+                        const startPos = selection.getStartPosition();
+                        const endPos = selection.getEndPosition();
+                        
+                        // For single line selection, position in the middle
+                        if (startPos.lineNumber === endPos.lineNumber) {
+                            const column = Math.floor((startPos.column + endPos.column) / 2);
+                            return {
+                                position: { lineNumber: startPos.lineNumber, column: column },
+                                preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE]
+                            };
+                        }
+                        
+                        // For multi-line selection, position at the start of first line
+                        return {
+                            position: startPos,
+                            preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE]
+                        };
+                    }
+                };
+                return widget;
+            }
+
+            // Create action buttons container
+            const createActionButtons = (selection) => {
+                const container = document.createElement('div');
+                container.className = 'monaco-action-buttons';
+                container.style.position = 'absolute';
+                container.style.zIndex = '100000';
+
+                const chatButton = document.createElement('button');
+                chatButton.className = 'monaco-action-button';
+                chatButton.innerHTML = 'Chat ⌘L';
+
+                const editButton = document.createElement('button');
+                editButton.className = 'monaco-action-button';
+                editButton.innerHTML = 'Edit ⌘K';
+
+                container.appendChild(chatButton);
+                container.appendChild(editButton);
+
+
+                // Add click handlers
+                chatButton.onclick = () => {
+                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
                     if (selectedCode) {
                         chatInterface?.handleCodeSelection(selectedCode);
                     }
+                };
+
+                editButton.onclick = () => {
+                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                    if (selectedCode) {
+                        chatInterface?.handleCodeEdit(selectedCode, selection);
+                    }
+                };
+
+
+                return container;
+            };
+
+            // Track decorations
+            let currentDecorations = [];
+
+            // Add selection change listener
+            sourceEditor.onDidChangeCursorSelection((e) => {
+                const selection = e.selection;
+                
+                // Remove existing widget
+                if (editButtonWidget) {
+                    sourceEditor.removeContentWidget(editButtonWidget);
+                    editButtonWidget = null;
+                }
+
+                // Only show buttons if there's a real selection
+                if (!selection.isEmpty() && 
+                    !(selection.startLineNumber === selection.endLineNumber && 
+                      selection.startColumn === selection.endColumn)) {
+                    
+                    // Create new widget
+                    editButtonWidget = createWidget(selection);
+                    sourceEditor.addContentWidget(editButtonWidget);
+
+
+                    // Add selection highlight decoration
+                    currentDecorations = sourceEditor.deltaDecorations(currentDecorations, [{
+                        range: selection,
+                        options: {
+                            className: 'monaco-selection-highlight',
+                            inlineClassName: 'monaco-selection-highlight-inline',
+                            stickiness: monaco.editor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges
+                        }
+                    }]);
+                } else {
+                    // Clear decorations when no selection
+                    currentDecorations = sourceEditor.deltaDecorations(currentDecorations, []);
+                }
+            });
+
+            // Add keyboard shortcuts
+            sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL, () => {
+                const selection = sourceEditor.getSelection();
+                if (!selection.isEmpty()) {
+                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                    chatInterface?.handleCodeSelection(selectedCode);
+                }
+            });
+
+            sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
+                const selection = sourceEditor.getSelection();
+                if (!selection.isEmpty()) {
+                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                    chatInterface?.handleCodeEdit(selectedCode, selection);
                 }
             });
         });

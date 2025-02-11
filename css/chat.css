@@ -92,7 +92,9 @@
 .save-key-button,
 .suggest-fix-button,
 .code-assistant-button,
-.apply-fix-button {
+.apply-fix-button,
+.apply-edit-button,
+.monaco-edit-button {
     background: #4B4BF7;
     color: #ffffff;
     border: none;
@@ -114,17 +116,27 @@
 .save-key-button:hover,
 .suggest-fix-button:hover,
 .code-assistant-button:hover,
-.apply-fix-button:hover {
+.apply-fix-button:hover,
+.apply-edit-button:hover,
+.monaco-edit-button:hover {
     background: #6060FF;
 }
 
 /* Line Changes Styling */
+.line-changes-container {
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    margin: 12px 0;
+    padding: 12px;
+}
+
 .line-change {
     background: #252526;
     border: 1px solid #333;
     border-radius: 4px;
     margin: 8px 0;
-    padding: 8px;
+    padding: 12px;
     display: flex;
     gap: 12px;
     align-items: flex-start;
@@ -147,14 +159,84 @@
     flex: 1;
 }
 
-/* Fix Actions Styling */
-.fix-actions {
+.old-text {
+    color: #f14c4c;
+    margin-bottom: 4px;
+}
+
+.new-text {
+    color: #4cc790;
+}
+
+/* Monaco Editor Customizations */
+.monaco-action-buttons {
+    position: absolute !important;
+    display: flex !important;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 4px;
+    background: #252526;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 100000;
+    border: 1px solid #4B4BF7;
+    transform: translate(-50%, -100%);
+    margin-top: -8px;
+}
+
+.monaco-action-button {
+    background: #252526;
+    color: #ffffff;
+    border: 1px solid #4B4BF7;
+    padding: 4px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s;
+    min-width: 80px;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.monaco-action-button:hover {
+    background: #4B4BF7;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(75, 75, 247, 0.3);
+}
+
+.monaco-action-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.monaco-action-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(75, 75, 247, 0.4);
+}
+
+.monaco-editor .monaco-action-buttons {
+    position: absolute !important;
+    z-index: 100000 !important;
+}
+
+.monaco-editor .selected-text {
+    background-color: rgba(75, 75, 247, 0.2);
+}
+
+/* Fix and Edit Actions Styling */
+.fix-actions,
+.edit-actions {
     display: flex;
     gap: 8px;
     margin-top: 16px;
 }
 
-.cancel-fix-button {
+.cancel-fix-button,
+.cancel-edit-button {
     padding: 8px 16px;
     border-radius: 4px;
     font-size: 13px;
@@ -170,7 +252,8 @@
     min-width: 80px;
 }
 
-.cancel-fix-button:hover {
+.cancel-fix-button:hover,
+.cancel-edit-button:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -422,6 +505,16 @@
 strong {
     color: #ffffff;
     font-weight: 600;
+}
+
+/* Monaco Editor Selection Highlight */
+.monaco-selection-highlight {
+    background-color: rgba(75, 75, 247, 0.2) !important;
+    border: 1px solid rgba(75, 75, 247, 0.4) !important;
+}
+
+.monaco-selection-highlight-inline {
+    background-color: rgba(75, 75, 247, 0.2) !important;
 }
 
 /* Heading Styling */
