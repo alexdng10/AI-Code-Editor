@@ -310,14 +310,20 @@
     color: #ffffff;
     font-size: 18px;
     font-weight: 600;
-    margin: 24px 0 12px;
+    margin: 12px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .message-heading-3 {
     color: #ffffff;
     font-size: 16px;
     font-weight: 600;
-    margin: 20px 0 10px;
+    margin: 8px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Override default list counter */
@@ -329,6 +335,12 @@
     counter-increment: item;
     list-style: none;
     position: relative;
+    display: flex;
+    align-items: baseline;
+    min-height: 16px;
+    padding-left: 4px;
+    margin-bottom: 0;
+    line-height: 1.2;
 }
 
 .message ol > li::before {
@@ -336,6 +348,8 @@
     position: absolute;
     left: -16px;
     color: #4B4BF7;
+    font-size: 12px;
+    top: 0;
 }
 
 .message-paragraph {
@@ -353,8 +367,8 @@
 
 /* List Styling */
 .message ul, .message ol {
-    margin: 8px 0;
-    padding-left: 24px;
+    margin: 4px 0;
+    padding-left: 16px;
 }
 
 .message ul {
@@ -362,40 +376,184 @@
     padding-left: 0;
 }
 
-.message ul li {
+/* Special bullet point styling */
+.message li.bullet-→,
+.message li.bullet-⊙,
+.message li.bullet-▸ {
     position: relative;
-    padding-left: 20px;
+    padding-left: 12px;
     margin: 0;
-    padding-bottom: 8px;
-    line-height: 1.5;
-    display: block;
+    padding-bottom: 2px;
+    line-height: 1.4;
+    display: flex;
+    align-items: baseline;
+    color: #ffffff;
+    width: auto;
 }
 
-.message ul li:last-child {
-    padding-bottom: 0;
-}
-
-.message ul li::before {
-    content: '•';
+.message li.bullet-→::before,
+.message li.bullet-⊙::before,
+.message li.bullet-▸::before {
     position: absolute;
-    left: 0;
+    left: 2px;
     color: #4B4BF7;
-    font-size: 16px;
+    font-size: 14px;
+    width: 8px;
+    text-align: center;
+    font-family: monospace;
+    font-weight: bold;
+    top: 0;
+}
+
+.message li.bullet-→::before {
+    content: '•';
+    font-size: 14px;
+}
+
+.message li.bullet-⊙::before {
+    content: counter(item) '.';
+    counter-increment: item;
+    font-size: 12px;
+}
+
+.message li.bullet-▸::before {
+    content: '•';
+    font-size: 14px;
+}
+
+/* Description text styling */
+.message li .description {
+    display: inline;
+    color: #ffffff;
+    opacity: 0.9;
+    font-size: 0.95em;
+    line-height: 1.4;
+    margin-left: 4px;
+    white-space: normal;
+}
+
+/* Ensure text wrapping works correctly with bullet points */
+.message li.bullet-→,
+.message li.bullet-⊙,
+.message li.bullet-▸ {
+    color: #ffffff;
+}
+
+.message li.bullet-→ > *:not(ul):not(ol):not(.description),
+.message li.bullet-⊙ > *:not(ul):not(ol):not(.description),
+.message li.bullet-▸ > *:not(ul):not(ol):not(.description) {
+    color: inherit;
+    font-weight: 500;
+}
+
+/* Adjust spacing for items with descriptions */
+.message li.bullet-→ + li.bullet-→,
+.message li.bullet-⊙ + li.bullet-⊙,
+.message li.bullet-▸ + li.bullet-▸ {
+    margin-top: 1px;
+}
+
+.message li.bullet-→ > ul,
+.message li.bullet-→ > ol,
+.message li.bullet-⊙ > ul,
+.message li.bullet-⊙ > ol,
+.message li.bullet-▸ > ul,
+.message li.bullet-▸ > ol {
+    width: fit-content;
+    margin-top: 2px;
+}
+
+
+/* Reset counter for each new list */
+.message ul {
+    counter-reset: item;
+}
+
+
+/* Nested list styling */
+.message .level-0 {
+    margin-left: 0;
+}
+
+.message .level-1 {
+    margin-left: 16px;
+}
+
+.message .level-2 {
+    margin-left: 32px;
+}
+
+.message .bullet-type-→ {
+    margin-left: 0;
+}
+
+.message .bullet-type-⊙ {
+    margin-left: 24px;
+}
+
+.message .bullet-type-▸ {
+    margin-left: 48px;
+}
+
+.message ul ul,
+.message ul ol,
+.message ol ul,
+.message ol ol {
+    margin-top: 8px;
 }
 
 .message ol {
-    padding-left: 16px;
+    padding-left: 20px;
 }
 
 .message ol li {
     margin: 0;
-    padding-bottom: 8px;
-    line-height: 1.5;
+    padding-bottom: 0;
+    line-height: 1.2;
+    color: #4B4BF7;
+    position: relative;
+}
+
+.message ol li > * {
+    color: #ffffff;
+}
+
+.message ol li::before {
+    color: #4B4BF7;
+    left: -20px;
 }
 
 .message ol li:last-child {
     padding-bottom: 0;
 }
+
+/* Indentation classes */
+.message li.indent-0 {
+    margin-left: 0;
+}
+
+.message li.indent-1 {
+    margin-left: 16px;
+}
+
+.message li.indent-2 {
+    margin-left: 32px;
+}
+
+/* Ensure bullet points and numbers align properly */
+.message ul li::before,
+.message ol li::before {
+    position: absolute;
+    display: inline-block;
+    text-align: right;
+    width: 16px;
+}
+
+/* Add spacing between list items in the same section */
+.message li + li {
+    margin-top: 1px;
+}
+
 
 .message-list {
     margin-bottom: 16px !important;
@@ -479,18 +637,26 @@
 }
 
 .inline-code {
-    background: #1e1e1e;
+    background: #2d2d2d;
     color: #d4d4d4;
-    padding: 2px 6px;
-    border-radius: 4px;
+    padding: 1px 3px;
+    border-radius: 2px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.9em;
+    display: inline;
+    white-space: nowrap;
+    line-height: 1.2;
+    vertical-align: baseline;
 }
 
 /* Message Container Improvements */
 .message {
-    line-height: 1.5;
+    line-height: 1.4;
     word-wrap: break-word;
+    word-break: normal;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .message.assistant {
@@ -522,12 +688,18 @@ strong {
     color: #4B4BF7;
     font-size: 18px;
     font-weight: 600;
-    margin: 24px 0 12px;
+    margin: 8px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .message-heading-3 {
     color: #ffffff;
     font-size: 16px;
     font-weight: 600;
-    margin: 16px 0 8px;
+    margin: 6px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }

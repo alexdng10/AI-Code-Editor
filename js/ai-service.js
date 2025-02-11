@@ -18,7 +18,7 @@ export class AIService {
             ] : [
                 {
                     role: "system",
-                    content: `You are a helpful code assistant that analyzes code and provides explanations. Format your response using this EXACT structure:
+                    content: `You are a helpful code assistant that analyzes code and provides explanations. Format your response using this EXACT structure and special characters:
 
 ## Overview
 
@@ -26,33 +26,28 @@ A clear, concise explanation of what the code does and its main purpose.
 
 ## Implementation Details
 
-* Key Functions:
+→ Key Functions:
+  ⊙ \`functionName()\`: What this function does
+    ▸ Parameters and their types
+    ▸ Return values and types
+    ▸ Usage examples
 
-* \`functionName()\`: What this function does
-    1. Parameters and their types
-    2. Return values and types
-    3. Usage examples
+→ Data Structures:
+  ⊙ Main Components:
+    ▸ First data structure
+    ▸ Second data structure
+    ▸ How they interact
 
-* Data Structures:
-
-* Main Components:
-    1. First data structure
-    2. Second data structure
-    3. How they interact
-
-* Algorithm Steps:
-
-* Initialization:
-    1. First step
-    2. Second step
-
-* Main Process:
-    1. Process step one
-    2. Process step two
-
-* Completion:
-    1. Final steps
-    2. Return values
+→ Algorithm Steps:
+  ⊙ Initialization:
+    ▸ First step
+    ▸ Second step
+  ⊙ Main Process:
+    ▸ Process step one
+    ▸ Process step two
+  ⊙ Completion:
+    ▸ Final steps
+    ▸ Return values
 
 ## Code Analysis
 
@@ -60,66 +55,36 @@ A clear, concise explanation of what the code does and its main purpose.
 [Most relevant code snippet]
 \`\`\`
 
-* Key Points:
-
-* Important Variables:
-    1. First variable role
-    2. Second variable role
-
-* Critical Sections:
-    1. First section purpose
-    2. Second section purpose
+→ Key Points:
+  ⊙ Important Variables:
+    ▸ First variable role
+    ▸ Second variable role
+  ⊙ Critical Sections:
+    ▸ First section purpose
+    ▸ Second section purpose
 
 ## Technical Details
 
-* Complexity Analysis:
+→ Complexity Analysis:
+  ⊙ Time Complexity:
+    ▸ Best case: O(n)
+    ▸ Worst case: O(n2)
+  ⊙ Space Usage:
+    ▸ Memory allocation
+    ▸ Stack vs Heap
 
-* Time Complexity:
-    1. Best case: O(n)
-    2. Worst case: O(n2)
 
-* Space Usage:
-    1. Memory allocation
-    2. Stack vs Heap
 
-## Potential Issues
 
-* Edge Cases:
-
-* Critical Scenarios:
-    1. First edge case
-    2. Second edge case
-
-* Error Handling:
-    1. Error type one
-    2. Error type two
-
-## Improvements
-
-\`\`\`
-// Improved implementation
-function betterVersion() {
-    // With detailed comments
-}
-\`\`\`
-
-* Suggested Enhancements:
-
-* Code Quality:
-    1. First improvement
-    2. Second improvement
-
-* Performance:
-    1. Optimization one
-    2. Optimization two
 
 IMPORTANT FORMATTING RULES:
-1. Each bullet point MUST start with "* " on its own line
-2. Each numbered item MUST be on its own line with proper indentation
-3. Each section MUST have proper spacing
-4. Code blocks MUST use \`\`\` for proper formatting
-5. Use \`backticks\` for inline code
-6. Use ## for section headers`
+1. Use → for top-level bullet points
+2. Use ⊙ for second-level bullet points
+3. Use ▸ for third-level bullet points
+4. Each bullet point MUST be on its own line with proper indentation (2 spaces per level)
+5. Code blocks MUST use \`\`\` for proper formatting
+6. Use \`backticks\` for inline code
+7. Use ## for section headers`
                 },
                 {
                     role: "user",
@@ -140,7 +105,7 @@ IMPORTANT FORMATTING RULES:
                     max_tokens: 1024
                 })
             });
-
+            console.log(response);
             if (!response.ok) {
                 const errorData = await response.json().catch(() => null);
                 console.error('Groq API Error:', {
@@ -175,7 +140,7 @@ IMPORTANT FORMATTING RULES:
 
     async getCodeEdit(selectedCode, selection) {
         try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const response = await fetch('https://api.groq.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -232,7 +197,7 @@ IMPORTANT FORMATTING RULES:
 
     async getInlineHelp(selectedCode) {
         try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            const response = await fetch('https://api.groq.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -144,17 +144,50 @@ export class ChatInterface {
             `<strong>${text}</strong>`
         );
 
-        // Format bullet points (*) - ensure they're on new lines
-        formattedContent = formattedContent.replace(/^\*\s+(.+)$/gm, (match, text) => {
-            // Split text if it contains multiple sentences
-            const sentences = text.split(/(?<=\.) /);
-            return sentences.map(sentence => `<li>${sentence.trim()}</li>`).join('\n');
+        // Format special bullet points with proper nesting
+        formattedContent = formattedContent.replace(/^(\s*)([→⊙▸])\s+([^]*?)(?=\n\s*[→⊙▸]|\n\s*$|\n\s*##|$)/gm, (match, indent, bullet, text) => {
+            let level;
+            switch (bullet) {
+                case '→': level = 0; break;
+                case '⊙': level = 1; break;
+                case '▸': level = 2; break;
+                default: level = 0;
+            }
+            
+            // Split text into main text and description if there's a colon
+            const parts = text.split(/:\s*(.+)/s);
+            let mainText = parts[0].trim();
+            let description = parts[1] ? parts[1].trim() : '';
+            
+            // Handle inline code in text
+            mainText = mainText.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+            if (description) {
+                description = description.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+            }
+            
+            let result = `${indent}<li class="bullet-${bullet} indent-${level}">`;
+            result += mainText;
+            
+            if (description) {
+                result += `<span class="description">${description}</span>`;
+            }
+            
+            return result + '</li>';
         });
 
-        // Wrap bullet points in ul with proper spacing
-        formattedContent = formattedContent.replace(/(<li>.*?<\/li>\n?)+/g, match => 
-            `<ul class="message-list">\n${match}</ul>\n`
-        );
+        // Wrap bullet points in lists with proper nesting
+        formattedContent = formattedContent.replace(/(?:^|\n)(<li class="bullet-([→⊙▸])[^]*?<\/li>\n?)+/g, (match, _, bullet) => {
+            let level;
+            switch (bullet) {
+                case '→': level = 0; break;
+                case '⊙': level = 1; break;
+                case '▸': level = 2; break;
+                default: level = 0;
+            }
+            const indent = '  '.repeat(level);
+            const listType = bullet === '⊙' ? 'ol' : 'ul';
+            return `\n${indent}<${listType} class="message-list level-${level} bullet-type-${bullet}">\n${match}${indent}</${listType}>\n`;
+        });
 
         // Format code blocks with language support
         formattedContent = formattedContent.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
@@ -162,14 +195,30 @@ export class ChatInterface {
             return `<div class="code-block ${language}"><div class="code-header">${language}</div><pre><code>${code.trim()}</code></pre></div>`;
         });
 
-        // Format inline code
-        formattedContent = formattedContent.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+        // Format inline code - handle code within text
+        formattedContent = formattedContent.replace(/`([^`]+)`/g, (match, code) => {
+            // If code contains spaces, wrap each word in its own background
+            if (code.includes(' ')) {
+                return code.split(' ').map(word => 
+                    `<code class="inline-code">${word}</code>`
+                ).join(' ');
+            }
+            return `<code class="inline-code">${code}</code>`;
+        });
 
-        // Format numbered lists (1., 2., etc.)
-        formattedContent = formattedContent.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
-        formattedContent = formattedContent.replace(/(<li>.*?<\/li>\n?)+/g, match => 
-            `<ol class="message-list">${match}</ol>`
-        );
+        // Format standalone numbered lists
+        formattedContent = formattedContent.replace(/(?:^|\n)(?!\s*[→⊙▸])(\s*\d+\.\s+[^]*?)(?=\n\s*\d+\.|\n\s*##|\n\s*[→⊙▸]|$)/g, (match, content) => {
+            const lines = content.trim().split('\n');
+            const processedLines = lines.map(line => {
+                const match = line.match(/^\s*\d+\.\s+(.+)$/);
+                if (match) {
+                    return `<li>${match[1].trim()}</li>`;
+                }
+                return line;
+            }).join('\n');
+            
+            return `\n<ol class="message-list level-0">\n${processedLines}\n</ol>\n`;
+        });
 
         // Format sections
         formattedContent = formattedContent.split(/(?=##\s)/).map(section => {
