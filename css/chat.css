@@ -703,3 +703,40 @@ strong {
     align-items: center;
     gap: 4px;
 }
+
+
+/* Force .bullet-⊙ items to display "1." on a single line */
+
+.message li.bullet-⊙ {
+    /* Make sure it’s block + relatively positioned */
+    display: block !important;
+    position: relative !important;
+    padding-left: 1.8em !important; /* enough space for "1." */
+    margin-bottom: 8px !important;
+    line-height: 1.4 !important;
+    align-items: unset !important;   /* kill flex/baseline if set */
+  }
+  
+  .message li.bullet-⊙::before {
+    /* Combine the counter and the period as a single string "1." */
+    content: counter(item) ". ";
+    /* increment ensures each bullet gets 1, 2, 3, ... */
+    counter-increment: item;
+  
+    /* Let them line up horizontally (no forced narrow width) */
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    display: inline-block !important;
+    width: auto !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+  
+    /* Ensure no weird line breaks or tiny stacking */
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    color: #4B4BF7 !important;
+    font-weight: bold !important;
+  }
+  
+  
