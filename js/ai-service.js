@@ -195,9 +195,47 @@ IMPORTANT FORMATTING RULES:
         }
     }
 
-    async getInlineHelp(selectedCode) {
+    async getInlineHelp(selectedCode, request = null) {
         try {
-            const response = await fetch('https://api.groq.com/v1/chat/completions', {
+            const messages = [
+                {
+                    role: "system",
+                    content: `You are a helpful code assistant that explains code in an engaging way. Use these special markers to format your response:
+- Use → for main points
+- Use ⊙ for sub-points
+- Use ▸ for details
+- Use ## for section headers
+- Use \`backticks\` for code
+- Use \`\`\` for code blocks
+
+Be creative with your explanations but always use these markers for proper formatting. You can organize the content however you want, but make sure to use these markers consistently.
+
+Example format (but feel free to structure differently):
+
+## Your Creative Section Title
+
+→ Main Point
+  ⊙ Sub Point
+    ▸ Detail
+    ▸ Another Detail
+
+\`\`\`
+[code example if needed]
+\`\`\`
+
+→ Another Main Point
+  ⊙ Important Note
+    ▸ Key Detail`
+                },
+                {
+                    role: "user",
+                    content: request ? 
+                        `Analyze this code with focus on: ${request}\n\n${selectedCode}` :
+                        `Analyze this code and explain it creatively:\n\n${selectedCode}`
+                }
+            ];
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -205,17 +243,8 @@ IMPORTANT FORMATTING RULES:
                 },
                 body: JSON.stringify({
                     model: "llama-3.3-70b-versatile",
-                    messages: [
-                        {
-                            role: "system",
-                            content: "You are a helpful code assistant that explains code and answers questions."
-                        },
-                        {
-                            role: "user",
-                            content: `Please explain this code:\n\n${selectedCode}`
-                        }
-                    ],
-                    temperature: 0.5,
+                    messages: messages,
+                    temperature: 0.7,
                     max_tokens: 1024
                 })
             });

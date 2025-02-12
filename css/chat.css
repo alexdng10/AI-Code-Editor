@@ -30,6 +30,39 @@
     overflow-y: auto;
     padding: 16px;
     background: #1e1e1e;
+    max-width: 100%;
+    word-wrap: break-word;
+}
+
+.message {
+    width: calc(100% - 32px);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    margin: 16px;
+    box-sizing: border-box;
+}
+
+.code-block {
+    width: 100%;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    margin: 8px 0;
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+.code-block pre {
+    white-space: pre-wrap;
+}
+
+.code-block code {
+    white-space: pre-wrap;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 8px;
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* Placeholder text in empty chat */

@@ -637,7 +637,54 @@ document.addEventListener("DOMContentLoaded", async function () {
                 chatButton.onclick = () => {
                     const selectedCode = sourceEditor.getModel().getValueInRange(selection);
                     if (selectedCode) {
-                        chatInterface?.handleCodeSelection(selectedCode);
+                        if (!chatInterface?.aiService) {
+                            showError("Error", "Please set up your Groq API key first by clicking the API button in the Code Assistant panel.");
+                            return;
+                        }
+
+                        // Remove the buttons widget
+                        if (editButtonWidget) {
+                            sourceEditor.removeContentWidget(editButtonWidget);
+                            editButtonWidget = null;
+                        }
+
+                        // Show the input widget
+                        editInputWidget = createInputWidget(selection);
+                        sourceEditor.addContentWidget(editInputWidget);
+                        
+                        // Focus the input field
+                        const input = editInputWidget.getDomNode().querySelector('input');
+                        if (input) {
+                            input.focus();
+                            
+                            // Override the keypress handler for chat
+                            const existingHandler = input.onkeypress;
+                            input.onkeypress = async (e) => {
+                                if (e.key === 'Enter') {
+                                    const request = input.value.trim();
+                                    if (request) {
+                                        // Remove the input widget
+                                        if (editInputWidget) {
+                                            sourceEditor.removeContentWidget(editInputWidget);
+                                            editInputWidget = null;
+                                        }
+                                        
+                                        try {
+                                            // Get AI response and display in chat
+                                            const response = await chatInterface?.aiService.getInlineHelp(selectedCode, request);
+                                            chatInterface?.addMessage('assistant', response);
+                                        } catch (error) {
+                                            console.error('Error getting AI response:', error);
+                                        }
+                                    }
+                                } else if (e.key === 'Escape') {
+                                    if (editInputWidget) {
+                                        sourceEditor.removeContentWidget(editInputWidget);
+                                        editInputWidget = null;
+                                    }
+                                }
+                            };
+                        }
                     }
                 };
 
@@ -803,8 +850,54 @@ document.addEventListener("DOMContentLoaded", async function () {
             sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyL, () => {
                 const selection = sourceEditor.getSelection();
                 if (!selection.isEmpty()) {
-                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
-                    chatInterface?.handleCodeSelection(selectedCode);
+                    if (!chatInterface?.aiService) {
+                        showError("Error", "Please set up your Groq API key first by clicking the API button in the Code Assistant panel.");
+                        return;
+                    }
+
+                    // Remove the buttons widget
+                    if (editButtonWidget) {
+                        sourceEditor.removeContentWidget(editButtonWidget);
+                        editButtonWidget = null;
+                    }
+
+                    // Show the input widget
+                    editInputWidget = createInputWidget(selection);
+                    sourceEditor.addContentWidget(editInputWidget);
+                    
+                    // Focus the input field
+                    const input = editInputWidget.getDomNode().querySelector('input');
+                    if (input) {
+                        input.focus();
+                        
+                        // Override the keypress handler for chat
+                        const existingHandler = input.onkeypress;
+                        input.onkeypress = async (e) => {
+                            if (e.key === 'Enter') {
+                                const request = input.value.trim();
+                                if (request) {
+                                    // Remove the input widget
+                                    if (editInputWidget) {
+                                        sourceEditor.removeContentWidget(editInputWidget);
+                                        editInputWidget = null;
+                                    }
+                                    
+                                    try {
+                                        // Get AI response and display in chat
+                                        const response = await chatInterface?.aiService.getInlineHelp(selectedCode, request);
+                                        chatInterface?.addMessage('assistant', response);
+                                    } catch (error) {
+                                        console.error('Error getting AI response:', error);
+                                    }
+                                }
+                            } else if (e.key === 'Escape') {
+                                if (editInputWidget) {
+                                    sourceEditor.removeContentWidget(editInputWidget);
+                                    editInputWidget = null;
+                                }
+                            }
+                        };
+                    }
                 }
             });
 
