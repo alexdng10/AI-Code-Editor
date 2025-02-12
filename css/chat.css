@@ -43,7 +43,7 @@
     margin-bottom: 16px;
     padding: 12px;
     border-radius: 6px;
-    max-width: 85%;
+    
     background: #252526;
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
@@ -791,7 +791,7 @@ strong {
     word-wrap: break-word;
     overflow-wrap: break-word;
     white-space: normal;
-    max-width: 85%; /* or 100% if you want full width */
+    max-width: 100%; /* or 100% if you want full width */
     box-sizing: border-box;
   }
   
@@ -810,3 +810,36 @@ strong {
     box-sizing: border-box;
   }
   
+  /* Force bullet items to be block-level and wrap normally */
+.message li.bullet-→,
+.message li.bullet-⊙,
+.message li.bullet-▸ {
+  display: block !important;
+  position: relative !important;
+  align-items: unset !important;
+  margin-bottom: 6px !important;
+  padding-left: 1.8em !important; /* Enough room for the bullet */
+  line-height: 1.5 !important;
+}
+
+.message li.bullet-→::before,
+.message li.bullet-⊙::before,
+.message li.bullet-▸::before {
+  display: inline-block !important;
+  position: absolute !important;
+  left: 0 !important;
+  width: auto !important;
+  margin-right: 4px; /* small spacing after bullet */
+  text-align: left !important;
+  font-weight: bold !important;
+}
+
+/* Also override .message ol > li to be block-level instead of flex */
+.message ol > li {
+  display: block !important;
+  align-items: unset !important;
+  margin-bottom: 6px !important;
+  padding-left: 1.8em !important;
+  line-height: 1.5 !important;
+  min-height: auto !important;
+}

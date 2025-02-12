@@ -126,121 +126,152 @@ export class ChatInterface {
     addMessage(role, content) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}`;
-
-        // Format headers (##, ###) and handle numbered headings
+    
+        // Keep the original text in case we need a fallback
+        const originalText = content;
+    
+        // 1) Headings (##, ###) with auto-increment on level-2
         let headingCounter = 0;
-        let formattedContent = content.replace(/^(#{2,3})\s+(.+)$/gm, (match, hashes, text) => {
-            const level = hashes.length;
-            // Only increment counter for level 2 headings
+        let formattedContent = content.replace(
+          /^(#{2,3})\s+(.+)$/gm,
+          (match, hashes, text) => {
+            const level = hashes.length; // 2 or 3
             if (level === 2) {
-                headingCounter++;
-                return `<h${level} class="message-heading-${level}">${headingCounter}. ${text}</h${level}>`;
+              headingCounter++;
+              return `<h${level} class="message-heading-${level}">${headingCounter}. ${text}</h${level}>`;
             }
             return `<h${level} class="message-heading-${level}">${text}</h${level}>`;
-        });
-
-        // Format bold text (**)
-        formattedContent = formattedContent.replace(/\*\*([^*]+)\*\*/g, (match, text) => 
-            `<strong>${text}</strong>`
+          }
         );
-
-        // Format special bullet points with proper nesting
-        formattedContent = formattedContent.replace(/^(\s*)([→⊙▸])\s+([^]*?)(?=\n\s*[→⊙▸]|\n\s*$|\n\s*##|$)/gm, (match, indent, bullet, text) => {
+    
+        // 2) Bold text (**something**)
+        formattedContent = formattedContent.replace(
+          /\*\*([^*]+)\*\*/g,
+          (match, text) => `<strong>${text}</strong>`
+        );
+    
+        // 3) Special bullet points (→ ⊙ ▸)
+        formattedContent = formattedContent.replace(
+          /^(\s*)([→⊙▸])\s+([^]*?)(?=\n\s*[→⊙▸]|\n\s*$|\n\s*##|$)/gm,
+          (match, indent, bullet, text) => {
             let level;
             switch (bullet) {
-                case '→': level = 0; break;
-                case '⊙': level = 1; break;
-                case '▸': level = 2; break;
-                default: level = 0;
+              case '→': level = 0; break;
+              case '⊙': level = 1; break;
+              case '▸': level = 2; break;
+              default: level = 0;
             }
-            
-            // Split text into main text and description if there's a colon
+    
+            // If there's a colon, split main text vs description
             const parts = text.split(/:\s*(.+)/s);
-            let mainText = parts[0].trim();
-            let description = parts[1] ? parts[1].trim() : '';
-            
-            // Handle inline code in text
-            mainText = mainText.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-            if (description) {
-                description = description.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
-            }
-            
+            const mainText = parts[0].trim().replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+            const description = parts[1]
+              ? parts[1].trim().replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+              : '';
+    
             let result = `${indent}<li class="bullet-${bullet} indent-${level}">`;
             result += mainText;
-            
             if (description) {
-                result += `<span class="description">${description}</span>`;
+              result += `<span class="description">${description}</span>`;
             }
-            
             return result + '</li>';
-        });
-
-        // Wrap bullet points in lists with proper nesting
-        formattedContent = formattedContent.replace(/(?:^|\n)(<li class="bullet-([→⊙▸])[^]*?<\/li>\n?)+/g, (match, _, bullet) => {
+          }
+        );
+    
+        // 4) Wrap the bullet items into <ul> or <ol>
+        formattedContent = formattedContent.replace(
+          /(?:^|\n)(<li class="bullet-([→⊙▸])[^]*?<\/li>\n?)+/g,
+          (match, _, bullet) => {
             let level;
             switch (bullet) {
-                case '→': level = 0; break;
-                case '⊙': level = 1; break;
-                case '▸': level = 2; break;
-                default: level = 0;
+              case '→': level = 0; break;
+              case '⊙': level = 1; break;
+              case '▸': level = 2; break;
+              default: level = 0;
             }
             const indent = '  '.repeat(level);
             const listType = bullet === '⊙' ? 'ol' : 'ul';
             return `\n${indent}<${listType} class="message-list level-${level} bullet-type-${bullet}">\n${match}${indent}</${listType}>\n`;
-        });
-
-        // Format code blocks with language support
-        formattedContent = formattedContent.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+          }
+        );
+    
+        // 5) Code blocks with ```lang
+        formattedContent = formattedContent.replace(
+          /```(\w+)?\n([\s\S]*?)```/g,
+          (match, lang, code) => {
             const language = lang || '';
-            return `<div class="code-block ${language}"><div class="code-header">${language}</div><pre><code>${code.trim()}</code></pre></div>`;
-        });
-
-        // Format inline code - handle code within text
+            return `
+              <div class="code-block ${language}">
+                <div class="code-header">${language}</div>
+                <pre><code>${code.trim()}</code></pre>
+              </div>
+            `;
+          }
+        );
+    
+        // 6) Inline code (single backticks)
+        // If user’s code has spaces, each word is wrapped
         formattedContent = formattedContent.replace(/`([^`]+)`/g, (match, code) => {
-            // If code contains spaces, wrap each word in its own background
-            if (code.includes(' ')) {
-                return code.split(' ').map(word => 
-                    `<code class="inline-code">${word}</code>`
-                ).join(' ');
-            }
-            return `<code class="inline-code">${code}</code>`;
+          if (code.includes(' ')) {
+            return code.split(' ').map(word =>
+              `<code class="inline-code">${word}</code>`
+            ).join(' ');
+          }
+          return `<code class="inline-code">${code}</code>`;
         });
-
-        // Format standalone numbered lists
-        formattedContent = formattedContent.replace(/(?:^|\n)(?!\s*[→⊙▸])(\s*\d+\.\s+[^]*?)(?=\n\s*\d+\.|\n\s*##|\n\s*[→⊙▸]|$)/g, (match, content) => {
-            const lines = content.trim().split('\n');
-            const processedLines = lines.map(line => {
-                const match = line.match(/^\s*\d+\.\s+(.+)$/);
-                if (match) {
-                    return `<li>${match[1].trim()}</li>`;
-                }
-                return line;
+    
+        // 7) Standalone numbered lists: "1. something" -> <ol><li>something</li></ol>
+        formattedContent = formattedContent.replace(
+          /(?:^|\n)(?!\s*[→⊙▸])(\s*\d+\.\s+[^]*?)(?=\n\s*\d+\.|\n\s*##|\n\s*[→⊙▸]|$)/g,
+          (match, contentBlock) => {
+            const lines = contentBlock.trim().split('\n');
+            const liItems = lines.map(line => {
+              const mo = line.match(/^\s*(\d+\.)\s+(.+)$/);
+              if (mo) {
+                return `<li>${mo[2].trim()}</li>`;
+              }
+              return line; // fallback if line doesn’t match
             }).join('\n');
-            
-            return `\n<ol class="message-list level-0">\n${processedLines}\n</ol>\n`;
-        });
-
-        // Format sections
+            return `\n<ol class="message-list level-0">\n${liItems}\n</ol>\n`;
+          }
+        );
+    
+        // 8) Section-splitting on "##"
         formattedContent = formattedContent.split(/(?=##\s)/).map(section => {
-            if (section.trim()) {
-                return `<div class="message-section">${section}</div>`;
-            }
-            return section;
+          if (section.trim()) {
+            return `<div class="message-section">${section}</div>`;
+          }
+          return section;
         }).join('');
-
-        // Add line breaks for paragraphs (but not inside code blocks or lists)
+    
+        // 9) Paragraph-splitting on double newlines
         formattedContent = formattedContent.split(/\n\n+/).map(para => {
-            if (!para.includes('code-block') && !para.includes('<li>')) {
-                return `<p class="message-paragraph">${para.trim()}</p>`;
-            }
-            return para;
+          // Only wrap in <p> if it’s not inside a bullet or code block
+          if (!para.includes('code-block') && !para.includes('<li>')) {
+            return `<p class="message-paragraph">${para.trim()}</p>`;
+          }
+          return para;
         }).join('');
-
+    
+        // 10) Fallback if everything ended up empty
+        if (!formattedContent.trim()) {
+          // If your transformations produced nothing, just show original text as a paragraph.
+          formattedContent = `<p class="message-paragraph">${escapeHtml(originalText)}</p>`;
+        }
+    
+        // Now put the final HTML in the message
         messageDiv.innerHTML = formattedContent;
+    
+        // Append to DOM & scroll
         this.messagesContainer.appendChild(messageDiv);
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    
+        // Store in messages array
         this.messages.push({ role, content });
     }
+    
+    
+    
 
     async handleCodeSelection(selectedCode) {
         if (!this.aiService) return;
