@@ -32,6 +32,7 @@
     background: #1e1e1e;
 }
 
+/* Placeholder text in empty chat */
 .chat-placeholder {
     text-align: center;
     padding: 20px;
@@ -39,20 +40,30 @@
     opacity: 0.7;
 }
 
+/* Merge the two ".message" blocks into one */
 .message {
     margin-bottom: 16px;
     padding: 12px;
     border-radius: 6px;
-    
     background: #252526;
     color: #ffffff;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+
+    /* from the second .message block near bottom: */
+    line-height: 1.4;
+    word-wrap: break-word;
+    word-break: normal;
+    overflow-wrap: break-word;
+    white-space: normal;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .message.user {
     background: #4B4BF7;
     color: #ffffff;
     margin-left: auto;
+    padding: 12px 16px; /* preserve user-specific padding */
 }
 
 .message.assistant {
@@ -60,8 +71,10 @@
     color: #ffffff;
     margin-right: auto;
     border: 1px solid #333;
+    padding: 16px; /* from original .message.assistant block */
 }
 
+/* Chat input area + styling */
 .chat-input-container {
     padding: 16px;
     background: #252526;
@@ -366,7 +379,8 @@
 }
 
 /* List Styling */
-.message ul, .message ol {
+.message ul,
+.message ol {
     margin: 4px 0;
     padding-left: 16px;
 }
@@ -463,12 +477,10 @@
     margin-top: 2px;
 }
 
-
 /* Reset counter for each new list */
 .message ul {
     counter-reset: item;
 }
-
 
 /* Nested list styling */
 .message .level-0 {
@@ -554,7 +566,6 @@
     margin-top: 1px;
 }
 
-
 .message-list {
     margin-bottom: 16px !important;
 }
@@ -579,19 +590,6 @@
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Reduce empty space */
-.message-paragraph {
-    margin: 12px 0;
-}
-
-.message-heading-2 {
-    margin: 12px 0 8px;
-}
-
-.message-heading-3 {
-    margin: 10px 0 6px;
-}
-
 .message-section:first-child {
     margin-top: 0;
 }
@@ -610,6 +608,9 @@
     margin: 12px 0;
     font-family: 'JetBrains Mono', monospace;
     overflow: hidden;
+    /* (3) For wide code, allow horizontal scroll */
+    max-width: 100%;
+    overflow-x: auto;
 }
 
 .code-header {
@@ -636,6 +637,7 @@
     tab-size: 4;
 }
 
+/* Inline code */
 .inline-code {
     background: #2d2d2d;
     color: #d4d4d4;
@@ -647,24 +649,6 @@
     white-space: nowrap;
     line-height: 1.2;
     vertical-align: baseline;
-}
-
-/* Message Container Improvements */
-.message {
-    line-height: 1.4;
-    word-wrap: break-word;
-    word-break: normal;
-    overflow-wrap: break-word;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.message.assistant {
-    padding: 16px;
-}
-
-.message.user {
-    padding: 12px 16px;
 }
 
 /* Bold Text Styling */
@@ -704,26 +688,19 @@ strong {
     gap: 4px;
 }
 
-
 /* Force .bullet-⊙ items to display "1." on a single line */
-
 .message li.bullet-⊙ {
-    /* Make sure it’s block + relatively positioned */
     display: block !important;
     position: relative !important;
-    padding-left: 1.8em !important; /* enough space for "1." */
+    padding-left: 1.8em !important;
     margin-bottom: 8px !important;
     line-height: 1.4 !important;
-    align-items: unset !important;   /* kill flex/baseline if set */
-  }
-  
-  .message li.bullet-⊙::before {
-    /* Combine the counter and the period as a single string "1." */
+    align-items: unset !important;
+}
+
+.message li.bullet-⊙::before {
     content: counter(item) ". ";
-    /* increment ensures each bullet gets 1, 2, 3, ... */
     counter-increment: item;
-  
-    /* Let them line up horizontally (no forced narrow width) */
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
@@ -731,115 +708,75 @@ strong {
     width: auto !important;
     text-align: left !important;
     white-space: nowrap !important;
-  
-    /* Ensure no weird line breaks or tiny stacking */
     font-size: 14px !important;
     line-height: 1.4 !important;
     color: #4B4BF7 !important;
     font-weight: bold !important;
-  }
-  
-  
-  /* ============================================= */
-/* 1) Override negative offsets for <ol> items   */
-/* ============================================= */
+}
+
+/* 1) Override negative offsets for <ol> items */
 .message ol > li {
-    /* Ensure we don’t inherit flex or negative offsets */
     display: block !important;
     position: relative !important;
-  
-    /* Enough padding for "1." */
     padding-left: 1.8em !important;
-  
-    /* Keep them spaced nicely */
     margin-bottom: 8px !important;
     line-height: 1.4 !important;
-  
-    /* Remove baseline alignment or min-height from earlier rules */
     align-items: normal !important;
     min-height: auto !important;
-  }
-  
-  .message ol > li::before {
-    /* Make the counter “1.” appear as a single string */
+}
+
+.message ol > li::before {
     content: counter(item) ". ";
-  
-    /* Overwrite any negative left offset and forced widths */
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
     display: inline-block !important;
     width: auto !important;
-  
-    /* Keep “1.” on one line */
     white-space: nowrap !important;
     text-align: left !important;
-  
-    /* Basic styling for your bullet/number */
     color: #4B4BF7 !important;
     font-size: 14px !important;
     font-weight: bold !important;
     line-height: 1.4 !important;
     counter-increment: item;
-  }
-  
-  /* ====================================== */
-  /* 2) Force normal wrapping of text/code  */
-  /* ====================================== */
-  .message {
-    /* so text/code never bleeds outside .message */
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: normal;
-    max-width: 100%; /* or 100% if you want full width */
-    box-sizing: border-box;
-  }
-  
-  /* 3) For wide code blocks, allow horizontal scroll instead of overflow */
-  .message .code-block {
-    width: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-  }
-  
-  /* 4) Ensure .chat-messages itself doesn’t clip the message content */
-  .chat-messages {
-    overflow-y: auto;
-    overflow-x: hidden; /* or 'auto' if you prefer horizontal scrolling here */
-    max-width: 100%;
-    box-sizing: border-box;
-  }
-  
-  /* Force bullet items to be block-level and wrap normally */
+}
+
+/* 2) Force normal wrapping of text/code (already merged into .message) */
+
+/* 3) For wide code blocks, allow horizontal scroll (merged into .code-block) */
+
+/* 4) Ensure .chat-messages itself doesn’t clip (added above in .chat-messages) */
+
+/* Force bullet items to be block-level and wrap normally */
 .message li.bullet-→,
 .message li.bullet-⊙,
 .message li.bullet-▸ {
-  display: block !important;
-  position: relative !important;
-  align-items: unset !important;
-  margin-bottom: 6px !important;
-  padding-left: 1.8em !important; /* Enough room for the bullet */
-  line-height: 1.5 !important;
+    display: block !important;
+    position: relative !important;
+    align-items: unset !important;
+    margin-bottom: 6px !important;
+    padding-left: 1.8em !important;
+    line-height: 1.5 !important;
 }
 
 .message li.bullet-→::before,
 .message li.bullet-⊙::before,
 .message li.bullet-▸::before {
-  display: inline-block !important;
-  position: absolute !important;
-  left: 0 !important;
-  width: auto !important;
-  margin-right: 4px; /* small spacing after bullet */
-  text-align: left !important;
-  font-weight: bold !important;
+    display: inline-block !important;
+    position: absolute !important;
+    left: 0 !important;
+    width: auto !important;
+    margin-right: 4px;
+    text-align: left !important;
+    font-weight: bold !important;
 }
 
 /* Also override .message ol > li to be block-level instead of flex */
 .message ol > li {
-  display: block !important;
-  align-items: unset !important;
-  margin-bottom: 6px !important;
-  padding-left: 1.8em !important;
-  line-height: 1.5 !important;
-  min-height: auto !important;
+    display: block !important;
+    align-items: unset !important;
+    margin-bottom: 6px !important;
+    padding-left: 1.8em !important;
+    line-height: 1.5 !important;
+    min-height: auto !important;
 }
