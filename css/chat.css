@@ -36,15 +36,17 @@
 
 .message {
     width: calc(100% - 32px);
-    overflow-wrap: break-word;
-    word-break: break-word;
+    overflow-wrap: break-word;  /* Only break long words in text */
+    word-break: normal;        /* Leave code blocks untouched */
     margin: 16px;
     box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .code-block {
     width: 100%;
-    overflow-x: auto;
+    overflow: auto;
     white-space: pre-wrap;
     margin: 8px 0;
     font-size: 12px;
@@ -658,12 +660,14 @@
 .code-block pre {
     margin: 0;
     padding: 12px;
-    overflow-x: auto;
+    overflow: visible;
 }
 
 .code-block code {
     display: block;
-    white-space: pre;
+    white-space: pre;       /* Maintain code formatting */
+    word-wrap: normal;      /* No word breaking */
+    overflow: visible;       /* Horizontal scroll when needed */
     color: #d4d4d4;
     font-size: 13px;
     line-height: 1.5;
@@ -682,6 +686,9 @@
     white-space: nowrap;
     line-height: 1.2;
     vertical-align: baseline;
+    white-space: normal;
+    overflow-wrap: anywhere;  /* Break only if needed */
+    word-break: normal;      /* Keep words intact when possible */
 }
 
 /* Bold Text Styling */
