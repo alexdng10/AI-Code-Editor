@@ -657,6 +657,37 @@ strong {
     font-weight: 600;
 }
 
+/* Monaco Editor Edit Input */
+.monaco-edit-input {
+    position: absolute !important;
+    z-index: 100000 !important;
+    display: flex !important;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 4px;
+    background: #252526;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid #4B4BF7;
+    margin-top: -8px;
+    min-width: 300px;
+}
+
+.monaco-edit-input input {
+    flex: 1;
+    background: #1e1e1e;
+    color: #ffffff;
+    border: 1px solid #333;
+    border-radius: 3px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    outline: none;
+}
+
+.monaco-edit-input input:focus {
+    border-color: #4B4BF7;
+}
+
 /* Monaco Editor Selection Highlight */
 .monaco-selection-highlight {
     background-color: rgba(75, 75, 247, 0.2) !important;

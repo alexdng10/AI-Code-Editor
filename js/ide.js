@@ -570,10 +570,13 @@ document.addEventListener("DOMContentLoaded", async function () {
             sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
 
             // Add context menu for code selection chat
-            // Add edit button widget
+            // Add edit button and input widgets
             let editButtonWidget = null;
+            let editInputWidget = null;
+            let currentSelection = null;
 
             function createWidget(selection) {
+                currentSelection = selection;
                 const widget = {
                     domNode: createActionButtons(selection),
                     getId: () => 'code-edit-button',
@@ -601,12 +604,23 @@ document.addEventListener("DOMContentLoaded", async function () {
                 return widget;
             }
 
+            function createInputWidget(selection) {
+                const widget = {
+                    domNode: createInputField(selection),
+                    getId: () => 'code-edit-input',
+                    getDomNode: function() { return this.domNode; },
+                    getPosition: () => ({
+                        position: selection.getStartPosition(),
+                        preference: [monaco.editor.ContentWidgetPositionPreference.ABOVE]
+                    })
+                };
+                return widget;
+            }
+
             // Create action buttons container
             const createActionButtons = (selection) => {
                 const container = document.createElement('div');
                 container.className = 'monaco-action-buttons';
-                container.style.position = 'absolute';
-                container.style.zIndex = '100000';
 
                 const chatButton = document.createElement('button');
                 chatButton.className = 'monaco-action-button';
@@ -619,7 +633,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                 container.appendChild(chatButton);
                 container.appendChild(editButton);
 
-
                 // Add click handlers
                 chatButton.onclick = () => {
                     const selectedCode = sourceEditor.getModel().getValueInRange(selection);
@@ -631,11 +644,120 @@ document.addEventListener("DOMContentLoaded", async function () {
                 editButton.onclick = () => {
                     const selectedCode = sourceEditor.getModel().getValueInRange(selection);
                     if (selectedCode) {
-                        chatInterface?.handleCodeEdit(selectedCode, selection);
+                        if (!chatInterface?.aiService) {
+                            showError("Error", "Please set up your Groq API key first by clicking the API button in the Code Assistant panel.");
+                            return;
+                        }
+
+                        // Remove the buttons widget
+                        if (editButtonWidget) {
+                            sourceEditor.removeContentWidget(editButtonWidget);
+                            editButtonWidget = null;
+                        }
+
+                        // Show the input widget
+                        editInputWidget = createInputWidget(selection);
+                        sourceEditor.addContentWidget(editInputWidget);
+                        
+                        // Focus the input field
+                        const input = editInputWidget.getDomNode().querySelector('input');
+                        if (input) {
+                            input.focus();
+                        }
                     }
                 };
 
+                return container;
+            };
 
+            // Create input field
+            const createInputField = (selection) => {
+                const container = document.createElement('div');
+                container.className = 'monaco-edit-input';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = 'Type your request here...';
+
+                // Handle input submission
+                input.addEventListener('keypress', async (e) => {
+                    if (e.key === 'Enter') {
+                        const request = input.value.trim();
+                        if (request) {
+                            const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                            
+                            // Remove the input widget
+                            if (editInputWidget) {
+                                sourceEditor.removeContentWidget(editInputWidget);
+                                editInputWidget = null;
+                            }
+
+                            try {
+                                // Get AI response
+                                const response = await chatInterface?.aiService.getCodeEdit(selectedCode, selection, request);
+                                
+                                // Parse the response to extract line changes and code
+                                const lines = response.split('\n');
+                                let lineChanges = [];
+                                let suggestedCode = '';
+                                
+                                let inCodeBlock = false;
+                                for (const line of lines) {
+                                    if (line.startsWith('```')) {
+                                        inCodeBlock = !inCodeBlock;
+                                        continue;
+                                    }
+                                    
+                                    if (inCodeBlock) {
+                                        suggestedCode += line + '\n';
+                                        continue;
+                                    }
+
+                                    // Look for line changes in the format "Line X: Change "old" to "new""
+                                    const changeMatch = line.match(/Line\s+(\d+):\s*Change\s*"([^"]+)"\s*to\s*"([^"]+)"/);
+                                    if (changeMatch) {
+                                        lineChanges.push({
+                                            lineNumber: parseInt(changeMatch[1]),
+                                            oldText: changeMatch[2].trim(),
+                                            newText: changeMatch[3].trim()
+                                        });
+                                    }
+                                }
+
+                                // Apply the changes
+                                if (lineChanges.length > 0) {
+                                    const model = sourceEditor.getModel();
+                                    const edits = lineChanges.map(change => ({
+                                        range: new monaco.Range(
+                                            change.lineNumber,
+                                            1,
+                                            change.lineNumber,
+                                            model.getLineLength(change.lineNumber) + 1
+                                        ),
+                                        text: change.newText
+                                    }));
+                                    sourceEditor.executeEdits('ai-edit', edits);
+                                } else if (suggestedCode) {
+                                    // Fallback to replacing the selected code
+                                    sourceEditor.executeEdits('ai-edit', [{
+                                        range: selection,
+                                        text: suggestedCode.trim()
+                                    }]);
+                                }
+                            } catch (error) {
+                                console.error('Error getting AI edit:', error);
+                            }
+                        }
+                    } else if (e.key === 'Escape') {
+                        // Remove the input widget on Escape
+                        if (editInputWidget) {
+                            sourceEditor.removeContentWidget(editInputWidget);
+                            editInputWidget = null;
+                        }
+                    }
+                });
+
+                container.appendChild(input);
                 return container;
             };
 
@@ -689,8 +811,41 @@ document.addEventListener("DOMContentLoaded", async function () {
             sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK, () => {
                 const selection = sourceEditor.getSelection();
                 if (!selection.isEmpty()) {
+                    if (!chatInterface?.aiService) {
+                        showError("Error", "Please set up your Groq API key first by clicking the API button in the Code Assistant panel.");
+                        return;
+                    }
+
+                    // Remove the buttons widget
+                    if (editButtonWidget) {
+                        sourceEditor.removeContentWidget(editButtonWidget);
+                        editButtonWidget = null;
+                    }
+
+                    // Show the input widget
+                    editInputWidget = createInputWidget(selection);
+                    sourceEditor.addContentWidget(editInputWidget);
+                    
+                    // Focus the input field
+                    const input = editInputWidget.getDomNode().querySelector('input');
+                    if (input) {
+                        input.focus();
+                    }
+
+                    // Handle URL normalization for localhost and [::]
+                    const normalizeLocalUrl = (url) => {
+                        try {
+                            const urlObj = new URL(url);
+                            // Keep the original format (localhost or [::])
+                            return url;
+                        } catch (e) {
+                            return url;
+                        }
+                    };
+
+                    // Update any URLs in the selected code
                     const selectedCode = sourceEditor.getModel().getValueInRange(selection);
-                    chatInterface?.handleCodeEdit(selectedCode, selection);
+                    // Don't modify URLs automatically, let the AI service handle any URL changes if needed
                 }
             });
         });

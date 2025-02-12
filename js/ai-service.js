@@ -138,9 +138,9 @@ IMPORTANT FORMATTING RULES:
         }
     }
 
-    async getCodeEdit(selectedCode, selection) {
+    async getCodeEdit(selectedCode, selection, request) {
         try {
-            const response = await fetch('https://api.groq.com/v1/chat/completions', {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -151,11 +151,11 @@ IMPORTANT FORMATTING RULES:
                     messages: [
                         {
                             role: "system",
-                            content: "You are a code editor assistant. When given a code segment, suggest improvements or modifications. Follow this format:\n\n1. Brief explanation of suggested changes\n2. List specific changes using: Line X: Change \"[old code]\" to \"[new code]\"\n3. Show complete modified code in a code block\n\nKeep changes minimal and focused on improving code quality, readability, or performance."
+                            content: "You are a code editor assistant. When given a code segment and a request, modify the code according to the request. Follow this EXACT format:\n\n1. Brief explanation of the changes\n2. List ONLY the necessary changes, one per line, using EXACTLY this format:\nLine X: Change \"[exact old code]\" to \"[exact new code]\"\n3. Show the complete modified code in a code block\n\nIMPORTANT:\n- Each line change must be on its own line\n- Use exact quotes and format: Line X: Change \"old\" to \"new\"\n- Only include lines that actually need to change\n- The old code must match the exact text in that line\n- Keep changes focused on the user's request"
                         },
                         {
                             role: "user",
-                            content: `Please suggest improvements for this code segment:\n\n${selectedCode}\n\nProvide specific line changes and the complete modified code.`
+                            content: `Please modify this code according to this request: "${request}"\n\nCode:\n${selectedCode}\n\nProvide ONLY the necessary line changes in the exact format specified, then show the complete modified code.`
                         }
                     ],
                     temperature: 0.5,
