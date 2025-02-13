@@ -233,50 +233,30 @@ export class ChatInterface {
     handleCodeModeUpdate(detail) {
         if (!this.codeModeEnabled) return;
 
-        const { suggestions, diffView } = detail;
-        this.lastCode = this.editor?.getValue() || '';
+        const { suggestions } = detail;
         const messageId = `msg-${++this.messageCounter}`;
 
-        // Create message content with diff view
-        let message = '## Code Suggestions\n\n';
-
-        // Add summary if available
-        if (diffView.summary) {
-            message += diffView.summary + '\n\n';
-        }
-
-        // Add changes overview
-        message += '→ Changes Overview:\n';
-        diffView.changes.forEach(change => {
-            message += `⊙ Line ${change.lineNumber}:\n`;
-            if (change.explanation) {
-                message += `  ▸ ${change.explanation}\n`;
-            }
-            message += `  ▸ Old: \`${change.oldText}\`\n`;
-            message += `  ▸ New: \`${change.newText}\`\n`;
-        });
-
-        // Add side-by-side diff view
-        message += '\n```diff-view\n';
-        diffView.diffLines.forEach(line => {
-            if (line.original.status === 'removed' || line.suggested.status === 'added') {
-                const originalContent = line.original.indentation + line.original.content.trim();
-                const suggestedContent = line.suggested.indentation + line.suggested.content.trim();
-                message += `${line.lineNumber}| ${originalContent} | ${suggestedContent}\n`;
-                if (line.explanation) {
-                    message += `   # ${line.explanation}\n`;
-                }
-            }
-        });
-        message += '```\n\n';
-
-        // Add action buttons container
+        // Create simple message with changes
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message assistant code-mode-suggestion';
         messageDiv.id = messageId;
-        messageDiv.innerHTML = this.formatMessage(message);
 
-        // Add approve/reject buttons
+        // Create message content
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        
+        // Add changes overview
+        if (suggestions.lineChanges && suggestions.lineChanges.length > 0) {
+            const changes = suggestions.lineChanges.map(change => 
+                `Line ${change.lineNumber}: ${change.explanation || ''}\n` +
+                `Old: ${change.oldText}\n` +
+                `New: ${change.newText}`
+            ).join('\n\n');
+            
+            content.textContent = changes;
+        }
+
+        // Add buttons
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'code-mode-actions';
         
@@ -308,10 +288,16 @@ export class ChatInterface {
 
         actionsDiv.appendChild(approveButton);
         actionsDiv.appendChild(rejectButton);
+
+        messageDiv.appendChild(content);
         messageDiv.appendChild(actionsDiv);
 
+        // Clear previous messages
+        while (this.messagesContainer.firstChild) {
+            this.messagesContainer.removeChild(this.messagesContainer.firstChild);
+        }
+
         this.messagesContainer.appendChild(messageDiv);
-        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
     formatMessage(content) {

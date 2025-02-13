@@ -36,6 +36,7 @@ var chatInterface;
 var codeModeManager;
 
 var sourceEditor;
+var optimizedEditor;
 var stdinEditor;
 var stdoutEditor;
 
@@ -58,42 +59,50 @@ var layoutConfig = {
     content: [{
         type: "row",
         content: [{
-            type: "component",
-            width: 66,
-            componentName: "source",
-            id: "source",
-            title: "Source Code",
-            isClosable: false,
-            componentState: {
-                readOnly: false
-            }
-        }, {
             type: "column",
+            width: 70,
             content: [{
                 type: "component",
-                componentName: "stdin",
-                id: "stdin",
-                title: "Input",
+                componentName: "source",
+                id: "source",
+                title: "main.cpp",
                 isClosable: false,
                 componentState: {
                     readOnly: false
                 }
-            }, {
-                type: "component",
-                componentName: "stdout",
-                id: "stdout",
-                title: "Output",
-                isClosable: false,
-                componentState: {
-                    readOnly: true
-                }
             }]
         }, {
-            type: "component",
-            componentName: "chat",
-            width: 25,
-            title: "Code Assistant",
-            isClosable: false
+            type: "column",
+            width: 30,
+            content: [{
+                type: "row",
+                content: [{
+                    type: "component",
+                    componentName: "stdin",
+                    width: 50,
+                    id: "stdin",
+                    title: "Input",
+                    isClosable: false,
+                    componentState: {
+                        readOnly: false
+                    }
+                }, {
+                    type: "component",
+                    componentName: "stdout",
+                    width: 50,
+                    id: "stdout",
+                    title: "Output",
+                    isClosable: false,
+                    componentState: {
+                        readOnly: true
+                    }
+                }]
+            }, {
+                type: "component",
+                componentName: "chat",
+                title: "Code Assistant",
+                isClosable: false
+            }]
         }]
     }]
 };
@@ -347,6 +356,7 @@ async function saveAction() {
 
 function setFontSizeForAllEditors(fontSize) {
     sourceEditor.updateOptions({ fontSize: fontSize });
+    optimizedEditor.updateOptions({ fontSize: fontSize });
     stdinEditor.updateOptions({ fontSize: fontSize });
     stdoutEditor.updateOptions({ fontSize: fontSize });
 }
@@ -400,7 +410,9 @@ async function loadLangauges() {
 };
 
 async function loadSelectedLanguage(skipSetDefaultSourceCodeName = false) {
-    monaco.editor.setModelLanguage(sourceEditor.getModel(), $selectLanguage.find(":selected").attr("langauge_mode"));
+    const languageMode = $selectLanguage.find(":selected").attr("langauge_mode");
+    monaco.editor.setModelLanguage(sourceEditor.getModel(), languageMode);
+    monaco.editor.setModelLanguage(optimizedEditor.getModel(), languageMode);
 
     if (!skipSetDefaultSourceCodeName) {
         setSourceCodeName((await getSelectedLanguage()).source_file);
@@ -444,8 +456,13 @@ async function getLanguage(flavor, languageId) {
 
 function setDefaults() {
     setFontSizeForAllEditors(fontSize);
+    
+    // Set source code directly without replacing line endings
     sourceEditor.setValue(DEFAULT_SOURCE);
+    
+    // Set stdin directly without replacing line endings
     stdinEditor.setValue(DEFAULT_STDIN);
+    
     $compilerOptions.val(DEFAULT_COMPILER_OPTIONS);
     $commandLineArguments.val(DEFAULT_CMD_ARGUMENTS);
 
@@ -456,6 +473,7 @@ function setDefaults() {
 
 function clear() {
     sourceEditor.setValue("");
+    optimizedEditor.setValue("");
     stdinEditor.setValue("");
     $compilerOptions.val("");
     $commandLineArguments.val("");
@@ -557,6 +575,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     require(["vs/editor/editor.main"], function (ignorable) {
         layout = new GoldenLayout(layoutConfig, $("#judge0-site-content"));
 
+        // Register components
         layout.registerComponent("source", function (container, state) {
             sourceEditor = monaco.editor.create(container.getElement()[0], {
                 automaticLayout: true,
@@ -590,6 +609,82 @@ document.addEventListener("DOMContentLoaded", async function () {
                     codeModeManager.disable();
                     console.log('Code mode disabled');
                 }
+            });
+
+            // Listen for code mode updates
+            window.addEventListener('codeModeUpdate', (e) => {
+                const { suggestions, diffView } = e.detail;
+                
+                if (suggestions && diffView) {
+                    // Get the source column
+                    const sourceColumn = layout.root.getItemsById('source')[0].parent;
+                    
+                    // Check if optimized component already exists
+                    let optimizedComponent = layout.root.getItemsById('optimized')[0];
+                    
+                    if (!optimizedComponent) {
+                        // Create new optimized component next to source
+                        const optimizedConfig = {
+                            type: 'component',
+                            componentName: 'optimized',
+                            id: 'optimized',
+                            title: 'Optimized Code',
+                            componentState: {
+                                readOnly: true
+                            }
+                        };
+                        
+                        // Add optimized component next to source
+                        sourceColumn.parent.addChild(optimizedConfig);
+                        optimizedComponent = layout.root.getItemsById('optimized')[0];
+                        
+                        // Adjust column widths
+                        sourceColumn.setSize(35);
+                        optimizedComponent.parent.setSize(35);
+                    }
+                    
+                    // Update optimized editor content
+                    optimizedEditor.setValue(diffView.optimized.code);
+                    monaco.editor.setModelLanguage(optimizedEditor.getModel(), diffView.optimized.language);
+                    
+                    // Add decorations for changes
+                    const decorations = diffView.changes.map(change => ({
+                        range: new monaco.Range(
+                            change.lineNumber,
+                            1,
+                            change.lineNumber,
+                            1
+                        ),
+                        options: {
+                            isWholeLine: true,
+                            className: 'line-modified',
+                            glyphMarginClassName: 'glyph-modified'
+                        }
+                    }));
+                    
+                    sourceEditor.deltaDecorations([], decorations);
+                    optimizedEditor.deltaDecorations([], decorations);
+                }
+            });
+
+            // Listen for layout reset
+            window.addEventListener('resetCodeLayout', () => {
+                // Find and remove optimized component if it exists
+                const optimizedComponent = layout.root.getItemsById('optimized')[0];
+                if (optimizedComponent) {
+                    optimizedComponent.parent.remove();
+                }
+                
+                // Reset source column width
+                const sourceColumn = layout.root.getItemsById('source')[0].parent;
+                sourceColumn.setSize(70);
+                
+                // Reset decorations
+                sourceEditor.deltaDecorations([], []);
+                optimizedEditor.setValue('');
+                
+                // Update layout
+                layout.updateSize();
             });
 
             // Listen for code mode actions (apply/reject)
@@ -978,6 +1073,20 @@ document.addEventListener("DOMContentLoaded", async function () {
                 }
             });
         });
+        // Register optimized code component
+        layout.registerComponent("optimized", function (container, state) {
+            optimizedEditor = monaco.editor.create(container.getElement()[0], {
+                automaticLayout: true,
+                scrollBeyondLastLine: true,
+                readOnly: true,
+                language: "cpp",
+                fontFamily: "JetBrains Mono",
+                minimap: {
+                    enabled: true
+                }
+            });
+        });
+
         layout.registerComponent("chat", function (container, state) {
             chatInterface = new ChatInterface();
             chatInterface.initialize(container.getElement()[0]);
@@ -1012,8 +1121,20 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
 
         layout.on("initialised", function () {
-            setDefaults();
+            // Set initial content
+            sourceEditor.setValue(DEFAULT_SOURCE);
+            stdinEditor.setValue(DEFAULT_STDIN);
+            
+            // Set other defaults
+            setFontSizeForAllEditors(fontSize);
+            $compilerOptions.val(DEFAULT_COMPILER_OPTIONS);
+            $commandLineArguments.val(DEFAULT_CMD_ARGUMENTS);
+            $statusLine.html("");
+            
+            // Load language and refresh layout
+            loadSelectedLanguage();
             refreshLayoutSize();
+            
             window.top.postMessage({ event: "initialised" }, "*");
         });
 

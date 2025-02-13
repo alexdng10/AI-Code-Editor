@@ -25,6 +25,9 @@ export class CodeModeManager {
             lineNumbers: "on",
         });
         
+        // Listen for code changes event
+        window.addEventListener('showCodeChanges', this.handleShowCodeChanges.bind(this));
+        
         // Immediately analyze current code
         const currentCode = this.editor.getValue();
         if (currentCode.trim()) {
@@ -40,6 +43,104 @@ export class CodeModeManager {
             glyphMargin: false,
             lineNumbers: "on",
         });
+        
+        // Remove event listener
+        window.removeEventListener('showCodeChanges', this.handleShowCodeChanges.bind(this));
+        
+        // Reset layout to normal view
+        window.dispatchEvent(new CustomEvent('resetCodeLayout', {}));
+    }
+
+    handleCodeChange(e) {
+        // Debounce the analysis to avoid too many requests
+        if (this.analysisTimeout) {
+            clearTimeout(this.analysisTimeout);
+        }
+
+        this.analysisTimeout = setTimeout(async () => {
+            // Get the current code
+            const code = this.editor.getValue();
+            
+            try {
+                // Get suggestions from AI
+                const response = await this.aiService.getCodeModeAnalysis(code);
+                
+                // Parse the suggestions
+                const suggestions = this.parseSuggestions(response);
+                
+                if (suggestions && suggestions.lineChanges.length > 0) {
+                    // Store pending changes
+                    this.pendingChanges = suggestions;
+                    
+                    // Add decorations for changes
+                    const decorations = suggestions.lineChanges.map(change => ({
+                        range: new monaco.Range(
+                            change.lineNumber,
+                            1,
+                            change.lineNumber,
+                            1
+                        ),
+                        options: {
+                            isWholeLine: true,
+                            className: 'line-modified',
+                            glyphMarginClassName: 'glyph-modified',
+                            hoverMessage: { value: `${change.explanation || ''}\nOld: ${change.oldText}\nNew: ${change.newText}` }
+                        }
+                    }));
+                    
+                    this.editor.deltaDecorations([], decorations);
+
+                    // Emit event for UI to show suggestions
+                    window.dispatchEvent(new CustomEvent('codeModeUpdate', {
+                        detail: {
+                            suggestions
+                        }
+                    }));
+                }
+            } catch (error) {
+                console.error('Error in code mode analysis:', error);
+            }
+        }, 1000); // Wait 1 second after last change before analyzing
+    }
+
+    applyChanges() {
+        if (!this.pendingChanges) return;
+
+        const edits = [];
+        
+        if (this.pendingChanges.lineChanges.length > 0) {
+            // Apply specific line changes
+            for (const change of this.pendingChanges.lineChanges) {
+                const lineContent = this.editor.getModel().getLineContent(change.lineNumber);
+                const startIndex = lineContent.indexOf(change.oldText);
+                
+                if (startIndex !== -1) {
+                    edits.push({
+                        range: new monaco.Range(
+                            change.lineNumber,
+                            startIndex + 1,
+                            change.lineNumber,
+                            startIndex + change.oldText.length + 1
+                        ),
+                        text: change.newText
+                    });
+                }
+            }
+        }
+
+        if (edits.length > 0) {
+            this.editor.executeEdits('code-mode', edits);
+        }
+
+        // Clear decorations
+        this.editor.deltaDecorations([], []);
+        this.pendingChanges = null;
+    }
+
+    rejectChanges() {
+        // Clear decorations
+        this.editor.deltaDecorations([], []);
+        this.pendingChanges = null;
     }
 
     async handleCodeChange(e) {
@@ -81,57 +182,61 @@ export class CodeModeManager {
     }
 
     createDiffView(originalCode, suggestions) {
-        const diffLines = [];
-        const originalLines = originalCode.split('\n');
-        const suggestedLines = suggestions.fullCode ? suggestions.fullCode.split('\n') : [...originalLines];
+        // Create separate editors for original and optimized code
+        const originalEditor = {
+            code: originalCode,
+            language: this.detectLanguage(originalCode),
+            lineCount: originalCode.split('\n').length
+        };
 
-        // Apply line changes to create suggested version
-        if (suggestions.lineChanges.length > 0) {
+        // Create optimized version by applying suggestions
+        let optimizedCode = suggestions.fullCode || originalCode;
+        if (!suggestions.fullCode && suggestions.lineChanges.length > 0) {
+            const lines = originalCode.split('\n');
             suggestions.lineChanges.forEach(change => {
-                if (change.lineNumber <= suggestedLines.length) {
-                    suggestedLines[change.lineNumber - 1] = change.newText;
+                if (change.lineNumber <= lines.length) {
+                    lines[change.lineNumber - 1] = change.newText;
                 }
             });
+            optimizedCode = lines.join('\n');
         }
 
-        // Create side-by-side diff with syntax highlighting
-        const maxLines = Math.max(originalLines.length, suggestedLines.length);
+        const optimizedEditor = {
+            code: optimizedCode,
+            language: this.detectLanguage(optimizedCode),
+            lineCount: optimizedCode.split('\n').length
+        };
+
+        // Create line-by-line diff mapping
+        const diffMapping = [];
+        const maxLines = Math.max(originalEditor.lineCount, optimizedEditor.lineCount);
+        
         for (let i = 0; i < maxLines; i++) {
-            const originalLine = originalLines[i] || '';
-            const suggestedLine = suggestedLines[i] || '';
             const lineNumber = i + 1;
-
-            // Check if this line has changes
-            const hasChange = suggestions.lineChanges.some(change => 
-                change.lineNumber === lineNumber
-            );
-
-            // Get line indentation
-            const indentMatch = originalLine.match(/^(\s*)/);
-            const indentation = indentMatch ? indentMatch[1] : '';
-
-            // Create diff line with proper formatting
-            diffLines.push({
+            const originalLine = originalCode.split('\n')[i] || '';
+            const optimizedLine = optimizedCode.split('\n')[i] || '';
+            
+            const change = suggestions.lineChanges.find(c => c.lineNumber === lineNumber);
+            const lineMapping = {
                 lineNumber,
                 original: {
                     content: originalLine,
-                    status: hasChange ? 'removed' : 'unchanged',
-                    indentation: indentation
+                    decorations: change ? 'removed' : 'unchanged'
                 },
-                suggested: {
-                    content: suggestedLine,
-                    status: hasChange ? 'added' : 'unchanged',
-                    indentation: indentation
+                optimized: {
+                    content: optimizedLine,
+                    decorations: change ? 'added' : 'unchanged'
                 },
-                // Add explanation if available
-                explanation: hasChange ? suggestions.lineChanges.find(
-                    change => change.lineNumber === lineNumber
-                )?.explanation || '' : ''
-            });
+                explanation: change?.explanation || ''
+            };
+            
+            diffMapping.push(lineMapping);
         }
 
         return {
-            diffLines,
+            original: originalEditor,
+            optimized: optimizedEditor,
+            diffMapping,
             summary: suggestions.summary || '',
             changes: suggestions.lineChanges.map(change => ({
                 lineNumber: change.lineNumber,
@@ -140,6 +245,20 @@ export class CodeModeManager {
                 explanation: change.explanation || ''
             }))
         };
+    }
+
+    detectLanguage(code) {
+        // Simple language detection based on file extension patterns
+        if (code.includes('#include') && /\b(int|void|char|float|double|bool)\b/.test(code)) {
+            return 'cpp';
+        } else if (/\b(function|const|let|var)\b/.test(code)) {
+            return 'javascript';
+        } else if (/\b(def|class|import)\b/.test(code)) {
+            return 'python';
+        } else if (/\b(public|private|class|void)\b/.test(code)) {
+            return 'java';
+        }
+        return 'plaintext';
     }
 
     parseSuggestions(response) {
