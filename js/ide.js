@@ -54,7 +54,8 @@ var languages = {};
 var layoutConfig = {
     settings: {
         showPopoutIcon: false,
-        reorderEnabled: true
+        reorderEnabled: true,
+        showMaximiseIcon: false
     },
     content: [{
         type: "row",
@@ -62,17 +63,14 @@ var layoutConfig = {
             type: "column",
             width: 70,
             content: [{
-                type: "stack",
-                content: [{
-                    type: "component",
-                    componentName: "source",
-                    id: "source",
-                    title: "main.cpp",
-                    isClosable: false,
-                    componentState: {
-                        readOnly: false
-                    }
-                }]
+                type: "component",
+                componentName: "source",
+                id: "source",
+                title: "main.cpp",
+                isClosable: false,
+                componentState: {
+                    readOnly: false
+                }
             }]
         }, {
             type: "column",
@@ -623,6 +621,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                     const sourceContainer = layout.root.getItemsById('source')[0];
                     const sourceColumn = sourceContainer.parent;
                     
+                    // Store original content and state
+                    const originalContent = sourceEditor.getValue();
+                    const originalState = sourceEditor.saveViewState();
+                    
                     // Create a new row for side-by-side diff with fixed widths
                     const diffRow = {
                         type: 'row',
@@ -660,6 +662,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                     // Update the layout to reflect the new configuration
                     layout.updateSize(true);
                     
+                    // Restore original content and state
+                    sourceEditor.setValue(originalContent);
+                    sourceEditor.restoreViewState(originalState);
+                    
                     // Sync scroll positions
                     sourceEditor.onDidScrollChange((e) => {
                         if (optimizedEditor) {
@@ -681,8 +687,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                     
                     // Force layout update
                     layout.updateSize();
-                    // Update optimized editor content
+                    // Update editor contents
+                    sourceEditor.setValue(diffView.original.code);
                     optimizedEditor.setValue(diffView.optimized.code);
+                    monaco.editor.setModelLanguage(sourceEditor.getModel(), diffView.original.language);
                     monaco.editor.setModelLanguage(optimizedEditor.getModel(), diffView.optimized.language);
                     
                     // Add decorations for changes
@@ -731,6 +739,10 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             // Listen for layout reset
             window.addEventListener('resetCodeLayout', () => {
+                // Store current content and scroll state
+                const currentContent = sourceEditor.getValue();
+                const scrollState = sourceEditor.saveViewState();
+                
                 // Find and remove optimized component if it exists
                 const optimizedComponent = layout.root.getItemsById('optimized')[0];
                 if (optimizedComponent) {
@@ -742,12 +754,13 @@ document.addEventListener("DOMContentLoaded", async function () {
                 const diffRow = sourceComponent.parent;
                 const mainColumn = diffRow.parent;
                 
-                // Create new source component
+                // Create new source component with original layout
                 const newSourceComponent = {
                     type: 'component',
                     componentName: 'source',
                     id: 'source',
                     title: 'main.cpp',
+                    width: 70,
                     componentState: {
                         readOnly: false
                     }
@@ -759,12 +772,17 @@ document.addEventListener("DOMContentLoaded", async function () {
                 // Force layout update
                 layout.updateSize();
                 
+                // Restore content and scroll state
+                sourceEditor.setValue(currentContent);
+                sourceEditor.restoreViewState(scrollState);
+                
                 // Reset decorations
                 sourceEditor.deltaDecorations([], []);
                 optimizedEditor.setValue('');
                 
-                // Update layout
-                layout.updateSize();
+                // Update layout with original proportions
+                mainColumn.setSize(70);
+                layout.updateSize(true);
             });
 
             // Listen for code mode actions (apply/reject)

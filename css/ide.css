@@ -1,4 +1,4 @@
-.judge0-file-menu {
+    .judge0-file-menu {
     min-width: 15rem !important;
 }
 
@@ -48,21 +48,28 @@
 /* Side-by-side diff view */
 .lm_content {
     position: relative !important;
+    overflow: hidden !important;
 }
 
 .lm_item[title="Original"],
 .lm_item[title="Optimized"] {
     border-right: 1px solid #333 !important;
+    width: 50% !important;
+    min-width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
 }
 
 .lm_item[title="Original"] .monaco-editor,
 .lm_item[title="Optimized"] .monaco-editor {
     height: 100% !important;
+    width: 100% !important;
 }
 
-/* Ensure editors take full height */
+/* Ensure editors take full height and width */
 .monaco-editor {
     height: 100% !important;
+    width: 100% !important;
 }
 
 /* Sync scrolling styles */
@@ -73,18 +80,12 @@
 /* Smooth transitions */
 .lm_splitter {
     transition: all 0.3s ease !important;
+    background: #333 !important;
+    width: 1px !important;
 }
 
 .lm_item {
     transition: width 0.3s ease !important;
-}
-
-/* Ensure equal widths in diff view */
-.lm_row > .lm_item {
-    width: 50% !important;
-    min-width: 50% !important;
-    max-width: 50% !important;
-    flex: 1 1 50% !important;
 }
 
 /* Force equal distribution in code mode */
@@ -92,6 +93,8 @@
     display: flex !important;
     flex-direction: row !important;
     justify-content: space-between !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .code-mode-active .lm_item[data-id="source"],
@@ -99,7 +102,19 @@
     width: 50% !important;
     min-width: 50% !important;
     max-width: 50% !important;
-    flex: 1 1 50% !important;
+    flex: 0 0 50% !important;
+    height: 100% !important;
+}
+
+/* Ensure proper editor sizing */
+.code-mode-active .monaco-editor {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Add visual separation */
+.code-mode-active .lm_item[data-id="source"] {
+    border-right: 1px solid #333 !important;
 }
 
 /* Code Mode Messages */
@@ -219,33 +234,38 @@
 
 /* Dynamic column layout */
 .lm_row > .lm_item {
-    transition: width 0.3s ease-in-out;
+    transition: width 0.3s ease-in-out !important;
 }
 
-.code-mode-active .lm_item[data-id="source"],
-.code-mode-active .lm_item[data-id="optimized"] {
-    min-width: 35% !important;
-    max-width: 65% !important;
+/* Ensure strict 50-50 split */
+.lm_item[title="Original"],
+.lm_item[title="Optimized"] {
+    width: 50% !important;
+    min-width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
 }
 
-.code-mode-active .lm_item[data-id="source"] {
-    margin-right: 8px;
+/* Visual separation */
+.lm_item[title="Original"] {
+    border-right: 1px solid #333 !important;
 }
 
+/* Message styling */
 .code-mode-suggestion {
-    background: #1e1e1e;
-    border: 1px solid #4B4BF7;
-    padding: 16px;
-    margin-bottom: 16px;
-    border-radius: 6px;
-    transition: all 0.3s ease;
+    background: #1e1e1e !important;
+    border: 1px solid #4B4BF7 !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 6px !important;
+    transition: all 0.3s ease !important;
 }
 
 .suggestion-changes {
-    margin-top: 16px;
-    padding: 8px;
-    background: #252526;
-    border-radius: 4px;
+    margin-top: 16px !important;
+    padding: 8px !important;
+    background: #252526 !important;
+    border-radius: 4px !important;
 }
 
 /* Smooth layout transitions */

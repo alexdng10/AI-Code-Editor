@@ -254,80 +254,38 @@ export class ChatInterface {
         const { suggestions, diffView } = detail;
         if (!suggestions || !diffView) return;
 
-        const messageId = `msg-${++this.messageCounter}`;
+        // Add a small status message in the chat
+        this.addMessage('assistant', `## Code Analysis\n\nAnalyzing changes... Check the side-by-side view for suggested improvements.`);
 
-        // Create message with changes
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'message assistant code-mode-suggestion';
-        messageDiv.id = messageId;
-
-        // Create message content
-        let content = '';
-        
-        // Add summary if available
-        if (suggestions.summary) {
-            content += `
-                <div class="suggestion-summary">
-                    <h3>Suggested Changes</h3>
-                    <p>${suggestions.summary}</p>
-                </div>
-            `;
-        }
-
-        // Add changes overview with explanations
-        if (diffView.changes && diffView.changes.length > 0) {
-            content += `
-                <div class="suggestion-changes">
-                    <h4>Changes:</h4>
-                    ${diffView.changes.map(change => `
-                        <div class="change-item">
-                            <div class="change-line">Line ${change.lineNumber}:</div>
-                            <div class="change-old"><span class="removed-marker">-</span> <code>${escapeHtml(change.oldText)}</code></div>
-                            <div class="change-new"><span class="added-marker">+</span> <code>${escapeHtml(change.newText)}</code></div>
-                            ${change.explanation ? `<div class="change-explanation">${change.explanation}</div>` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        // Add buttons
-        content += `
-            <div class="code-mode-actions">
-                <button class="approve-button">Apply Changes</button>
-                <button class="reject-button">Reject Changes</button>
-            </div>
+        // Create action buttons container
+        const actionDiv = document.createElement('div');
+        actionDiv.className = 'code-mode-actions';
+        actionDiv.innerHTML = `
+            <button class="approve-button">Apply Changes</button>
+            <button class="reject-button">Reject Changes</button>
         `;
 
-        messageDiv.innerHTML = content;
-
         // Add button handlers
-        const approveButton = messageDiv.querySelector('.approve-button');
+        const approveButton = actionDiv.querySelector('.approve-button');
         approveButton.onclick = () => {
             window.dispatchEvent(new CustomEvent('codeModeAction', {
-                detail: { 
-                    action: 'apply',
-                    messageId: messageId
-                }
+                detail: { action: 'apply' }
             }));
+            // Remove the action buttons after clicking
+            actionDiv.remove();
         };
 
-        const rejectButton = messageDiv.querySelector('.reject-button');
+        const rejectButton = actionDiv.querySelector('.reject-button');
         rejectButton.onclick = () => {
             window.dispatchEvent(new CustomEvent('codeModeAction', {
-                detail: { 
-                    action: 'reject',
-                    messageId: messageId
-                }
+                detail: { action: 'reject' }
             }));
+            // Remove the action buttons after clicking
+            actionDiv.remove();
         };
 
-        // Clear previous messages
-        while (this.messagesContainer.firstChild) {
-            this.messagesContainer.removeChild(this.messagesContainer.firstChild);
-        }
-
-        this.messagesContainer.appendChild(messageDiv);
+        // Add the action buttons to the messages container
+        this.messagesContainer.appendChild(actionDiv);
     }
 
     formatMessage(content) {

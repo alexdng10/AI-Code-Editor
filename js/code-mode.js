@@ -5,6 +5,7 @@ export class CodeModeManager {
         this.aiService = aiService;
         this.enabled = false;
         this.pendingChanges = null;
+        this.originalCode = null;
         this.setupEditorListeners();
     }
 
@@ -19,6 +20,9 @@ export class CodeModeManager {
 
     enable() {
         this.enabled = true;
+        // Store original code
+        this.originalCode = this.editor.getValue();
+        
         // Add visual indicator that code mode is active
         this.editor.updateOptions({
             glyphMargin: true,
@@ -44,6 +48,8 @@ export class CodeModeManager {
     disable() {
         this.enabled = false;
         this.pendingChanges = null;
+        this.originalCode = null;
+        
         // Reset editor options
         this.editor.updateOptions({
             glyphMargin: false,
@@ -102,7 +108,7 @@ export class CodeModeManager {
                     // Create diff view with full code comparison
                     const diffView = {
                         original: {
-                            code: code,
+                            code: this.originalCode || code,
                             language: this.editor.getModel().getLanguageId()
                         },
                         optimized: {
@@ -117,7 +123,7 @@ export class CodeModeManager {
                         }))
                     };
                     
-                    // Emit event for UI to show suggestions with diff
+                    // Show suggestions in the side-by-side view
                     window.dispatchEvent(new CustomEvent('codeModeUpdate', {
                         detail: {
                             suggestions,
@@ -283,30 +289,64 @@ export class CodeModeManager {
     applyChanges() {
         if (!this.pendingChanges) return;
 
-        // Use the optimized code from our pending changes
-        const optimizedCode = this.pendingChanges.fullCode;
-        if (!optimizedCode) return;
+        // Store current scroll position and selection
+        const scrollState = this.editor.saveViewState();
         
-        // Replace the entire content of the source editor
-        const model = this.editor.getModel();
-        this.editor.executeEdits('code-mode', [{
-            range: model.getFullModelRange(),
-            text: optimizedCode
-        }]);
-        
-        // Reset the layout after applying changes
-        window.dispatchEvent(new CustomEvent('resetCodeLayout'));
-        
+        // Apply the optimized code changes
+        if (this.pendingChanges.lineChanges && this.pendingChanges.lineChanges.length > 0) {
+            const model = this.editor.getModel();
+            const edits = this.pendingChanges.lineChanges.map(change => ({
+                range: new monaco.Range(
+                    change.lineNumber,
+                    1,
+                    change.lineNumber,
+                    model.getLineMaxColumn(change.lineNumber)
+                ),
+                text: change.newText
+            }));
+            
+            // Apply changes while preserving cursor position and scroll state
+            this.editor.executeEdits('code-mode', edits);
+            this.editor.restoreViewState(scrollState);
+        } else if (this.pendingChanges.fullCode) {
+            // If we have full code replacement, preserve the important parts
+            const model = this.editor.getModel();
+            this.editor.executeEdits('code-mode', [{
+                range: model.getFullModelRange(),
+                text: this.pendingChanges.fullCode
+            }]);
+            this.editor.restoreViewState(scrollState);
+        }
+
         // Clear pending changes
         this.pendingChanges = null;
         
-        // Disable code mode after applying changes
+        // Reset to original layout
+        window.dispatchEvent(new CustomEvent('resetCodeLayout'));
+        
+        // Disable code mode
         this.disable();
     }
 
     rejectChanges() {
-        // Reset the layout when rejecting changes
-        window.dispatchEvent(new CustomEvent('resetCodeLayout'));
+        // Restore original code if it exists
+        if (this.originalCode) {
+            const scrollState = this.editor.saveViewState();
+            const model = this.editor.getModel();
+            this.editor.executeEdits('code-mode', [{
+                range: model.getFullModelRange(),
+                text: this.originalCode
+            }]);
+            this.editor.restoreViewState(scrollState);
+        }
+        
+        // Clear pending changes
         this.pendingChanges = null;
+        
+        // Reset to original layout
+        window.dispatchEvent(new CustomEvent('resetCodeLayout'));
+        
+        // Disable code mode
+        this.disable();
     }
 }
