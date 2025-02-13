@@ -195,6 +195,79 @@ IMPORTANT FORMATTING RULES:
         }
     }
 
+    async getCodeModeAnalysis(code, userQuery = '') {
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: "llama-3.3-70b-versatile",
+                    messages: [
+                        {
+                            role: "system",
+                            content: `You are a code assistant in real-time code mode. When given code, analyze it and suggest improvements. Follow this EXACT format:
+
+1. Start with a brief summary of the suggested changes
+2. List each change with explanation using this format:
+   Line X: Change "[exact old code]" to "[exact new code]"
+   Explanation: Why this change improves the code
+
+3. Show the complete modified code in a code block
+
+IMPORTANT:
+- Each line change must be on its own line with exact quotes
+- Include explanations for each change
+- Only suggest necessary improvements
+- Focus on readability, best practices, and bug prevention
+- Keep changes focused and impactful`
+                        },
+                        {
+                            role: "user",
+                            content: userQuery ? 
+                                `Analyze this code and address: ${userQuery}\n\n${code}` :
+                                `Analyze this code and suggest improvements:\n\n${code}`
+                        }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 1024
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                console.error('Groq API Error:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorData
+                });
+                if (response.status === 401) {
+                    return 'Invalid or missing Groq API key. Please check your API key and try again.';
+                } else if (response.status === 429) {
+                    return 'Too many requests. Please wait a moment and try again.';
+                } else {
+                    return `API Error (${response.status}): ${response.statusText}`;
+                }
+            }
+            
+            const data = await response.json();
+            if (!data.choices?.[0]?.message?.content) {
+                console.error('Unexpected Groq API response:', data);
+                throw new Error('Invalid response format from Groq API');
+            }
+            
+            return data.choices[0].message.content;
+        } catch (error) {
+            console.error('Error in Groq AI service:', error);
+            if (error.message === 'Invalid response format from Groq API') {
+                return 'Received an invalid response from the AI service. Please try again.';
+            }
+            return 'An error occurred while processing your request. Please try again later.';
+        }
+    }
+
     async getInlineHelp(selectedCode, request = null) {
         try {
             const messages = [

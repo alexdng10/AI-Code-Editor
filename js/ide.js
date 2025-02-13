@@ -1,5 +1,6 @@
 import { IS_PUTER } from "./puter.js";
 import { ChatInterface } from "./chat-interface.js";
+import { CodeModeManager } from "./code-mode.js";
 
 const API_KEY = ""; // Get yours at https://platform.sulu.sh/apis/judge0
 
@@ -32,6 +33,7 @@ var fontSize = 13;
 
 var layout;
 var chatInterface;
+var codeModeManager;
 
 var sourceEditor;
 var stdinEditor;
@@ -569,6 +571,47 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             sourceEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, run);
 
+            // Initialize code mode manager after chat interface is ready
+            window.addEventListener('chatInterfaceReady', () => {
+                codeModeManager = new CodeModeManager(sourceEditor, chatInterface.aiService);
+            });
+
+            // Listen for code mode state changes
+            window.addEventListener('codeModeStateChange', (e) => {
+                if (!codeModeManager) {
+                    console.error('Code mode manager not initialized');
+                    return;
+                }
+                
+                if (e.detail.enabled) {
+                    codeModeManager.enable();
+                    console.log('Code mode enabled');
+                } else {
+                    codeModeManager.disable();
+                    console.log('Code mode disabled');
+                }
+            });
+
+            // Listen for code mode actions (apply/reject)
+            window.addEventListener('codeModeAction', (e) => {
+                const { action, messageId } = e.detail;
+                if (action === 'apply') {
+                    codeModeManager.applyChanges();
+                    // Remove the message after applying changes
+                    const messageDiv = document.getElementById(messageId);
+                    if (messageDiv) {
+                        messageDiv.querySelector('.code-mode-actions').remove();
+                    }
+                } else if (action === 'reject') {
+                    codeModeManager.rejectChanges();
+                    // Remove the message after rejecting changes
+                    const messageDiv = document.getElementById(messageId);
+                    if (messageDiv) {
+                        messageDiv.querySelector('.code-mode-actions').remove();
+                    }
+                }
+            });
+
             // Add context menu for code selection chat
             // Add edit button and input widgets
             let editButtonWidget = null;
@@ -938,6 +981,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         layout.registerComponent("chat", function (container, state) {
             chatInterface = new ChatInterface();
             chatInterface.initialize(container.getElement()[0]);
+            // Set editor reference after initialization
+            chatInterface.editor = sourceEditor;
         });
 
         layout.registerComponent("stdin", function (container, state) {
