@@ -51,70 +51,68 @@
     overflow: hidden !important;
 }
 
+/* Editor containers */
 .lm_item[title="Original"],
 .lm_item[title="Optimized"] {
-    border-right: 1px solid #333 !important;
     width: 50% !important;
     min-width: 50% !important;
     max-width: 50% !important;
     flex: 0 0 50% !important;
+    height: 100% !important;
+    position: relative !important;
 }
 
+/* Editor instances */
 .lm_item[title="Original"] .monaco-editor,
 .lm_item[title="Optimized"] .monaco-editor {
-    height: 100% !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
     width: 100% !important;
-}
-
-/* Ensure editors take full height and width */
-.monaco-editor {
     height: 100% !important;
+}
+
+/* Visual separation */
+.lm_item[title="Original"] {
+    border-right: 1px solid #333 !important;
+}
+
+/* Layout container */
+.lm_goldenlayout {
     width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
 }
 
-/* Sync scrolling styles */
-.monaco-scrollable-element {
-    overflow: hidden !important;
-}
-
-/* Smooth transitions */
-.lm_splitter {
-    transition: all 0.3s ease !important;
-    background: #333 !important;
-    width: 1px !important;
-}
-
-.lm_item {
-    transition: width 0.3s ease !important;
-}
-
-/* Force equal distribution in code mode */
-.code-mode-active .lm_row {
+/* Row container */
+.lm_row {
     display: flex !important;
     flex-direction: row !important;
-    justify-content: space-between !important;
     width: 100% !important;
     height: 100% !important;
 }
 
-.code-mode-active .lm_item[data-id="source"],
-.code-mode-active .lm_item[data-id="optimized"] {
-    width: 50% !important;
-    min-width: 50% !important;
-    max-width: 50% !important;
-    flex: 0 0 50% !important;
-    height: 100% !important;
+/* Splitter */
+.lm_splitter {
+    width: 1px !important;
+    background: #333 !important;
+    transition: none !important;
 }
 
-/* Ensure proper editor sizing */
-.code-mode-active .monaco-editor {
+/* Ensure proper sizing */
+.monaco-editor,
+.monaco-editor .overflow-guard {
     width: 100% !important;
     height: 100% !important;
 }
 
-/* Add visual separation */
-.code-mode-active .lm_item[data-id="source"] {
-    border-right: 1px solid #333 !important;
+/* Prevent overflow */
+.monaco-scrollable-element {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
 }
 
 /* Code Mode Messages */
@@ -232,76 +230,46 @@
     background: #db4a4a !important;
 }
 
-/* Dynamic column layout */
-.lm_row > .lm_item {
-    transition: width 0.3s ease-in-out !important;
-}
-
-/* Ensure strict 50-50 split */
-.lm_item[title="Original"],
-.lm_item[title="Optimized"] {
-    width: 50% !important;
-    min-width: 50% !important;
-    max-width: 50% !important;
-    flex: 0 0 50% !important;
-}
-
-/* Visual separation */
-.lm_item[title="Original"] {
-    border-right: 1px solid #333 !important;
-}
-
-/* Message styling */
-.code-mode-suggestion {
-    background: #1e1e1e !important;
-    border: 1px solid #4B4BF7 !important;
-    padding: 16px !important;
-    margin-bottom: 16px !important;
-    border-radius: 6px !important;
-    transition: all 0.3s ease !important;
-}
-
-.suggestion-changes {
-    margin-top: 16px !important;
-    padding: 8px !important;
-    background: #252526 !important;
-    border-radius: 4px !important;
-}
-
-/* Smooth layout transitions */
+/* Layout transitions */
 .lm_goldenlayout {
-    transition: all 0.3s ease-in-out;
+    transition: none !important;
 }
 
+/* Container styles */
 .code-mode-container {
-    display: flex;
-    flex-direction: row;
-    height: 100%;
-    width: 100%;
-    background-color: #1e1e1e;
+    display: flex !important;
+    flex-direction: row !important;
+    height: 100% !important;
+    width: 100% !important;
+    background-color: #1e1e1e !important;
 }
 
+/* Editor pane */
 .code-editor-pane {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid #333;
-    min-width: 0; /* Prevent flex item from overflowing */
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border-right: 1px solid #333 !important;
+    min-width: 0 !important;
+    position: relative !important;
 }
 
+/* Editor header */
 .code-editor-header {
-    padding: 8px;
-    background-color: #252526;
-    border-bottom: 1px solid #333;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 500;
+    padding: 8px !important;
+    background-color: #252526 !important;
+    border-bottom: 1px solid #333 !important;
+    color: #fff !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    z-index: 1 !important;
 }
 
+/* Editor content */
 .code-editor-content {
-    flex: 1;
-    overflow: auto;
-    position: relative;
+    flex: 1 !important;
+    overflow: hidden !important;
+    position: relative !important;
 }
 
 /* Diff View Styles */

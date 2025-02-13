@@ -166,19 +166,19 @@ export class ChatInterface {
 
             input.value = '';
 
-            if (this.codeModeEnabled) {
-                // Handle code mode conversation
-                this.addMessage('user', text);
-                this.aiService.getCodeModeAnalysis(this.lastCode, text)
-                    .then(response => {
-                        const suggestions = this.parseSuggestions(response);
-                        if (suggestions) {
-                            this.handleCodeModeUpdate({
-                                suggestions,
-                                diffView: this.createDiffView(this.lastCode, suggestions)
-                            });
-                        }
-                    })
+                if (this.codeModeEnabled) {
+                    // Handle code mode conversation
+                    this.addMessage('user', text);
+                    this.aiService.getCodeModeAnalysis(this.editor.getValue(), text)
+                        .then(response => {
+                            const suggestions = this.parseSuggestions(response);
+                            if (suggestions) {
+                                this.handleCodeModeUpdate({
+                                    suggestions,
+                                    diffView: this.createDiffView(this.editor.getValue(), suggestions)
+                                });
+                            }
+                        })
                     .catch(error => {
                         console.error('Error in code mode conversation:', error);
                         this.addMessage('assistant', 'Sorry, I encountered an error processing your request.');

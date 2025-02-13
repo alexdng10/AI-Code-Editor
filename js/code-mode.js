@@ -29,20 +29,8 @@ export class CodeModeManager {
             lineNumbers: "on",
         });
         
-        // Immediately analyze current code
-        const currentCode = this.editor.getValue();
-        if (currentCode.trim()) {
-            this.handleCodeChange();
-        }
-    }
-
-    handleShowCodeChanges(e) {
-        if (!this.enabled) return;
-        
-        const { code } = e.detail;
-        if (code) {
-            this.handleCodeChange();
-        }
+        // Trigger initial analysis
+        this.handleCodeChange();
     }
 
     disable() {
@@ -55,9 +43,6 @@ export class CodeModeManager {
             glyphMargin: false,
             lineNumbers: "on",
         });
-        
-        // Remove event listener
-        window.removeEventListener('showCodeChanges', this.handleShowCodeChanges.bind(this));
         
         // Reset layout to normal view
         window.dispatchEvent(new CustomEvent('resetCodeLayout', {}));

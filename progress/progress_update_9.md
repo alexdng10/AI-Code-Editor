@@ -116,38 +116,59 @@ async getCodeModeAnalysis(code, userQuery = '') {
 ```
 
 ### 4. CSS Styling (ide.css)
-- Added styles for side-by-side diff view
-- Implemented smooth transitions for layout changes
-- Enhanced the visual appearance of code changes
+- Added styles for side-by-side diff view with strict 50-50 split
+- Improved editor positioning and overflow handling
+- Enhanced visual separation between editors
+- Fixed layout stability issues
 ```css
-/* Side-by-side diff view */
-.lm_content {
+/* Editor containers */
+.lm_item[title="Original"],
+.lm_item[title="Optimized"] {
+    width: 50% !important;
+    min-width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+    height: 100% !important;
     position: relative !important;
 }
 
-.lm_item[title="Original"],
-.lm_item[title="Optimized"] {
-    border-right: 1px solid #333 !important;
-}
-
-/* Ensure editors take full height */
-.monaco-editor {
+/* Editor instances */
+.lm_item[title="Original"] .monaco-editor,
+.lm_item[title="Optimized"] .monaco-editor {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
     height: 100% !important;
 }
 
-/* Sync scrolling styles */
+/* Visual separation */
+.lm_item[title="Original"] {
+    border-right: 1px solid #333 !important;
+}
+
+/* Layout container */
+.lm_goldenlayout {
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+}
+
+/* Row container */
+.lm_row {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Prevent overflow */
 .monaco-scrollable-element {
+    width: 100% !important;
+    height: 100% !important;
     overflow: hidden !important;
-}
-
-/* Smooth transitions */
-.lm_splitter {
-    transition: all 0.3s ease !important;
-}
-
-/* Ensure equal widths in diff view */
-.lm_row > .lm_item {
-    width: 50% !important;
 }
 ```
 
@@ -176,6 +197,26 @@ async getCodeModeAnalysis(code, userQuery = '') {
    - Loading states during analysis
    - Error messages for API key issues
 
+## Recent Fixes
+
+1. Layout Stability:
+   - Fixed editor sizing and positioning
+   - Enforced strict 50-50 split between editors
+   - Improved overflow handling
+   - Added proper z-indexing for controls
+
+2. Visual Improvements:
+   - Enhanced visual separation between editors
+   - Fixed inconsistent styling
+   - Added proper border handling
+   - Improved transition behavior
+
+3. Editor State:
+   - Fixed content preservation during transitions
+   - Improved scroll synchronization
+   - Enhanced state management
+   - Fixed layout reset behavior
+
 ## Next Steps
 
 1. Testing:
@@ -189,3 +230,9 @@ async getCodeModeAnalysis(code, userQuery = '') {
    - Implement line linking between editors
    - Add diff overview ruler
    - Enhance performance for large files
+
+3. Layout Enhancements:
+   - Add resize handles between editors
+   - Implement collapsible panels
+   - Add fullscreen mode
+   - Improve mobile responsiveness
