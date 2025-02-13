@@ -658,25 +658,40 @@ document.addEventListener("DOMContentLoaded", async function () {
                             input.focus();
                             
                             // Override the keypress handler for chat
-                            const existingHandler = input.onkeypress;
-                            input.onkeypress = async (e) => {
-                                if (e.key === 'Enter') {
-                                    const request = input.value.trim();
-                                    if (request) {
-                                        // Remove the input widget
-                                        if (editInputWidget) {
-                                            sourceEditor.removeContentWidget(editInputWidget);
-                                            editInputWidget = null;
-                                        }
-                                        
-                                        try {
-                                            // Get AI response and display in chat
-                                            const response = await chatInterface?.aiService.getInlineHelp(selectedCode, request);
-                                            chatInterface?.addMessage('assistant', response);
-                                        } catch (error) {
-                                            console.error('Error getting AI response:', error);
-                                        }
+                        const existingHandler = input.onkeypress;
+                        input.onkeypress = async (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault(); // Prevent default enter behavior
+                                const request = input.value.trim();
+                                if (request) {
+                                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                                    
+                                    // Store current editor state
+                                    const currentContent = sourceEditor.getValue();
+                                    const currentPosition = sourceEditor.getPosition();
+                                    
+                                    // Remove the input widget
+                                    if (editInputWidget) {
+                                        sourceEditor.removeContentWidget(editInputWidget);
+                                        editInputWidget = null;
                                     }
+                                    
+                                    try {
+                                        // Get AI response and display in chat
+                                        const response = await chatInterface?.aiService.getInlineHelp(selectedCode, request);
+                                        chatInterface?.addMessage('assistant', response);
+                                        
+                                        // Restore editor state if needed
+                                        if (sourceEditor.getValue() !== currentContent) {
+                                            sourceEditor.setValue(currentContent);
+                                            if (currentPosition) {
+                                                sourceEditor.setPosition(currentPosition);
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.error('Error getting AI response:', error);
+                                    }
+                                }
                                 } else if (e.key === 'Escape') {
                                     if (editInputWidget) {
                                         sourceEditor.removeContentWidget(editInputWidget);
@@ -874,8 +889,15 @@ document.addEventListener("DOMContentLoaded", async function () {
                         const existingHandler = input.onkeypress;
                         input.onkeypress = async (e) => {
                             if (e.key === 'Enter') {
+                                e.preventDefault(); // Prevent default enter behavior
                                 const request = input.value.trim();
                                 if (request) {
+                                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                                    
+                                    // Store current editor state
+                                    const currentContent = sourceEditor.getValue();
+                                    const currentPosition = sourceEditor.getPosition();
+                                    
                                     // Remove the input widget
                                     if (editInputWidget) {
                                         sourceEditor.removeContentWidget(editInputWidget);
@@ -886,6 +908,14 @@ document.addEventListener("DOMContentLoaded", async function () {
                                         // Get AI response and display in chat
                                         const response = await chatInterface?.aiService.getInlineHelp(selectedCode, request);
                                         chatInterface?.addMessage('assistant', response);
+                                        
+                                        // Restore editor state if needed
+                                        if (sourceEditor.getValue() !== currentContent) {
+                                            sourceEditor.setValue(currentContent);
+                                            if (currentPosition) {
+                                                sourceEditor.setPosition(currentPosition);
+                                            }
+                                        }
                                     } catch (error) {
                                         console.error('Error getting AI response:', error);
                                     }
