@@ -715,23 +715,23 @@ document.addEventListener("DOMContentLoaded", async function () {
                 input.placeholder = 'Ask about this snippet...';
             
                 input.addEventListener('keypress', async (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const userQuestion = input.value.trim();
-                    if (!userQuestion) return;
-                    if (chatInputWidget) {
-                    sourceEditor.removeContentWidget(chatInputWidget);
-                    chatInputWidget = null;
-                    }
-                    const snippet = sourceEditor.getModel().getValueInRange(selection);
-                    chatInterface.addMessage('user', userQuestion);
-                    try {
-                    const response = await chatInterface.aiService.getInlineHelp(snippet, userQuestion);
-                    chatInterface.addMessage('assistant', response);
-                    } catch (error) {
-                    console.error('Error in chat snippet:', error);
-                    chatInterface.addMessage('assistant', 'Sorry, an error occurred while processing your request.');
-                    }
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const userQuestion = input.value.trim();
+                        if (!userQuestion) return;
+                        if (chatInputWidget) {
+                            sourceEditor.removeContentWidget(chatInputWidget);
+                            chatInputWidget = null;
+                        }
+                        const snippet = sourceEditor.getModel().getValueInRange(selection);
+                        chatInterface.addMessage('user', `${userQuestion}\n\nSelected code:\n\`\`\`cpp\n${snippet}\n\`\`\``);
+                        try {
+                            const response = await chatInterface.aiService.getInlineHelp(snippet, userQuestion);
+                            chatInterface.addMessage('assistant', response);
+                        } catch (error) {
+                            console.error('Error in chat snippet:', error);
+                            chatInterface.addMessage('assistant', 'Sorry, an error occurred while processing your request.');
+                        }
                 } else if (e.key === 'Escape') {
                     if (chatInputWidget) {
                     sourceEditor.removeContentWidget(chatInputWidget);
