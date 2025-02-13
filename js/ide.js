@@ -573,6 +573,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             // Add edit button and input widgets
             let editButtonWidget = null;
             let editInputWidget = null;
+            let chatInputWidget = null;
             let currentSelection = null;
 
             function createWidget(selection) {
@@ -645,24 +646,38 @@ document.addEventListener("DOMContentLoaded", async function () {
                 container.appendChild(chatButton);
                 container.appendChild(editButton);
               
+                
                 // Chat button handler:
                 chatButton.onclick = () => {
-                  const selectedCode = sourceEditor.getModel().getValueInRange(selection);
-                  if (selectedCode) {
-                    if (!chatInterface?.aiService) {
-                      showError("Error", "Please set up your Groq API key first by clicking the API button in the Code Assistant panel.");
-                      return;
+                    const selectedCode = sourceEditor.getModel().getValueInRange(selection);
+                    if (selectedCode) {
+                        if (!chatInterface?.aiService) {
+                            showError("Error", "Please set up your Groq API key first by clicking the API button in the Code Assistant panel.");
+                            return;
+                        }
+
+                        // Clean up all widgets
+                        if (editButtonWidget) {
+                            sourceEditor.removeContentWidget(editButtonWidget);
+                            editButtonWidget = null;
+                        }
+                        if (editInputWidget) {
+                            sourceEditor.removeContentWidget(editInputWidget);
+                            editInputWidget = null;
+                        }
+                        if (chatInputWidget) {
+                            sourceEditor.removeContentWidget(chatInputWidget);
+                            chatInputWidget = null;
+                        }
+
+                        // Create and show chat input
+                        chatInputWidget = createChatInputWidget(selection);
+                        sourceEditor.addContentWidget(chatInputWidget);
+                        
+                        // Focus the input field
+                        const input = chatInputWidget.getDomNode().querySelector('input');
+                        if (input) input.focus();
                     }
-                    if (chatInputWidget) {
-                      sourceEditor.removeContentWidget(chatInputWidget);
-                      chatInputWidget = null;
-                    }
-                    // Create and add the Chat widget.
-                    chatInputWidget = createChatInputWidget(selection);
-                    sourceEditor.addContentWidget(chatInputWidget);
-                    const input = chatInputWidget.getDomNode().querySelector('input');
-                    if (input) input.focus();
-                  }
                 };
               
                 // Edit button handler:
