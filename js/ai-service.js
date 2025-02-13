@@ -215,24 +215,27 @@ IMPORTANT FORMATTING RULES:
    Line X: Change "[exact old code]" to "[exact new code]"
    Explanation: Why this change improves the code
 
-3. Show the complete modified code in a code block
+3. Show the complete modified code in a code block starting with \`\`\`
+   IMPORTANT: The code block must contain the ENTIRE optimized code, not just the changed parts
 
-IMPORTANT:
+IMPORTANT RULES:
 - Each line change must be on its own line with exact quotes
 - Include explanations for each change
 - Only suggest necessary improvements
 - Focus on readability, best practices, and bug prevention
-- Keep changes focused and impactful`
+- Keep changes focused and impactful
+- ALWAYS include the complete optimized code in a code block, even if only small changes were made
+- The code block must contain the entire working program, not just snippets`
                         },
                         {
                             role: "user",
                             content: userQuery ? 
-                                `Analyze this code and address: ${userQuery}\n\n${code}` :
-                                `Analyze this code and suggest improvements:\n\n${code}`
+                                `Analyze this code and address: ${userQuery}\n\nProvide the complete optimized code along with your changes.\n\n${code}` :
+                                `Analyze this code and suggest improvements. Provide the complete optimized code along with your changes.\n\n${code}`
                         }
                     ],
                     temperature: 0.3,
-                    max_tokens: 1024
+                    max_tokens: 2048
                 })
             });
 

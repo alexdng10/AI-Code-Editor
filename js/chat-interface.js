@@ -60,11 +60,17 @@ export class ChatInterface {
 
         this.messagesContainer = this.container.querySelector('.chat-messages');
         // Add toggle button handler
-        // Add toggle button handler
         const toggleButton = this.container.querySelector('.code-mode-toggle');
         if (toggleButton) {
             toggleButton.addEventListener('change', (e) => {
+                if (!this.aiService?.apiKey) {
+                    e.target.checked = false;
+                    this.showApiKeyPrompt();
+                    return;
+                }
+
                 this.codeModeEnabled = e.target.checked;
+                
                 // Emit event for IDE to handle code mode state
                 window.dispatchEvent(new CustomEvent('codeModeStateChange', {
                     detail: {
@@ -75,12 +81,24 @@ export class ChatInterface {
                 // Add visual feedback in chat
                 if (this.codeModeEnabled) {
                     this.addMessage('assistant', '## Code Mode Enabled\n\nI will now analyze your code in real-time and suggest improvements. You can discuss changes with me in real-time.');
+                } else {
+                    // Reset layout when disabling code mode
+                    window.dispatchEvent(new CustomEvent('resetCodeLayout'));
                 }
             });
 
             // Listen for code mode updates
             window.addEventListener('codeModeUpdate', (e) => {
-                this.handleCodeModeUpdate(e.detail);
+                if (this.codeModeEnabled) {
+                    this.handleCodeModeUpdate(e.detail);
+                }
+            });
+
+            // Listen for error events
+            window.addEventListener('showError', (e) => {
+                this.addMessage('assistant', `## Error\n\n${e.detail.message}`);
+                toggleButton.checked = false;
+                this.codeModeEnabled = false;
             });
         }
 
@@ -233,36 +251,58 @@ export class ChatInterface {
     handleCodeModeUpdate(detail) {
         if (!this.codeModeEnabled) return;
 
-        const { suggestions } = detail;
+        const { suggestions, diffView } = detail;
+        if (!suggestions || !diffView) return;
+
         const messageId = `msg-${++this.messageCounter}`;
 
-        // Create simple message with changes
+        // Create message with changes
         const messageDiv = document.createElement('div');
         messageDiv.className = 'message assistant code-mode-suggestion';
         messageDiv.id = messageId;
 
         // Create message content
-        const content = document.createElement('div');
-        content.className = 'message-content';
+        let content = '';
         
-        // Add changes overview
-        if (suggestions.lineChanges && suggestions.lineChanges.length > 0) {
-            const changes = suggestions.lineChanges.map(change => 
-                `Line ${change.lineNumber}: ${change.explanation || ''}\n` +
-                `Old: ${change.oldText}\n` +
-                `New: ${change.newText}`
-            ).join('\n\n');
-            
-            content.textContent = changes;
+        // Add summary if available
+        if (suggestions.summary) {
+            content += `
+                <div class="suggestion-summary">
+                    <h3>Suggested Changes</h3>
+                    <p>${suggestions.summary}</p>
+                </div>
+            `;
+        }
+
+        // Add changes overview with explanations
+        if (diffView.changes && diffView.changes.length > 0) {
+            content += `
+                <div class="suggestion-changes">
+                    <h4>Changes:</h4>
+                    ${diffView.changes.map(change => `
+                        <div class="change-item">
+                            <div class="change-line">Line ${change.lineNumber}:</div>
+                            <div class="change-old"><span class="removed-marker">-</span> <code>${escapeHtml(change.oldText)}</code></div>
+                            <div class="change-new"><span class="added-marker">+</span> <code>${escapeHtml(change.newText)}</code></div>
+                            ${change.explanation ? `<div class="change-explanation">${change.explanation}</div>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
         }
 
         // Add buttons
-        const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'code-mode-actions';
-        
-        const approveButton = document.createElement('button');
-        approveButton.textContent = 'Approve Changes';
-        approveButton.className = 'approve-button';
+        content += `
+            <div class="code-mode-actions">
+                <button class="approve-button">Apply Changes</button>
+                <button class="reject-button">Reject Changes</button>
+            </div>
+        `;
+
+        messageDiv.innerHTML = content;
+
+        // Add button handlers
+        const approveButton = messageDiv.querySelector('.approve-button');
         approveButton.onclick = () => {
             window.dispatchEvent(new CustomEvent('codeModeAction', {
                 detail: { 
@@ -270,12 +310,9 @@ export class ChatInterface {
                     messageId: messageId
                 }
             }));
-            messageDiv.querySelector('.code-mode-actions').remove();
         };
 
-        const rejectButton = document.createElement('button');
-        rejectButton.textContent = 'Reject Changes';
-        rejectButton.className = 'reject-button';
+        const rejectButton = messageDiv.querySelector('.reject-button');
         rejectButton.onclick = () => {
             window.dispatchEvent(new CustomEvent('codeModeAction', {
                 detail: { 
@@ -283,14 +320,7 @@ export class ChatInterface {
                     messageId: messageId
                 }
             }));
-            messageDiv.querySelector('.code-mode-actions').remove();
         };
-
-        actionsDiv.appendChild(approveButton);
-        actionsDiv.appendChild(rejectButton);
-
-        messageDiv.appendChild(content);
-        messageDiv.appendChild(actionsDiv);
 
         // Clear previous messages
         while (this.messagesContainer.firstChild) {

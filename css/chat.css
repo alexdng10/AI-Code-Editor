@@ -644,6 +644,63 @@
     border-radius: 6px;
 }
 
+.suggestion-summary {
+    font-size: 14px;
+    color: #ffffff;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #252526;
+    border-radius: 4px;
+    border-left: 3px solid #4B4BF7;
+}
+
+.suggestion-changes {
+    margin-top: 16px;
+}
+
+.change-item {
+    background: #252526;
+    border: 1px solid #333;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    padding: 12px;
+}
+
+.change-line {
+    color: #4B4BF7;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+.change-old {
+    color: #f14c4c;
+    background: rgba(241, 76, 76, 0.1);
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-bottom: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+}
+
+.change-new {
+    color: #4cc790;
+    background: rgba(76, 199, 144, 0.1);
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+}
+
+.change-explanation {
+    color: #d4d4d4;
+    font-size: 12px;
+    font-style: italic;
+    padding: 4px 8px;
+    border-left: 2px solid #4B4BF7;
+}
+
 /* Enhanced Diff View */
 .diff-view {
     display: grid;

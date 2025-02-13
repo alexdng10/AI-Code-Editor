@@ -15,15 +15,242 @@
 }
 
 /* Code Mode Layout */
-.line-modified {
-    background-color: rgba(14, 99, 156, 0.2) !important;
-    border-left: 3px solid #0e639c !important;
+.line-removed {
+    background-color: rgba(255, 88, 88, 0.1) !important;
+    border-left: 3px solid #ff5858 !important;
 }
 
-.glyph-modified {
-    background-color: #0e639c !important;
+.line-added {
+    background-color: rgba(88, 255, 88, 0.1) !important;
+    border-left: 3px solid #58ff58 !important;
+}
+
+.glyph-removed {
+    background-color: #ff5858 !important;
     width: 3px !important;
     margin-left: 5px !important;
+}
+
+.glyph-added {
+    background-color: #58ff58 !important;
+    width: 3px !important;
+    margin-left: 5px !important;
+}
+
+.line-removed-margin {
+    background-color: rgba(255, 88, 88, 0.3) !important;
+}
+
+.line-added-margin {
+    background-color: rgba(88, 255, 88, 0.3) !important;
+}
+
+/* Side-by-side diff view */
+.lm_content {
+    position: relative !important;
+}
+
+.lm_item[title="Original"],
+.lm_item[title="Optimized"] {
+    border-right: 1px solid #333 !important;
+}
+
+.lm_item[title="Original"] .monaco-editor,
+.lm_item[title="Optimized"] .monaco-editor {
+    height: 100% !important;
+}
+
+/* Ensure editors take full height */
+.monaco-editor {
+    height: 100% !important;
+}
+
+/* Sync scrolling styles */
+.monaco-scrollable-element {
+    overflow: hidden !important;
+}
+
+/* Smooth transitions */
+.lm_splitter {
+    transition: all 0.3s ease !important;
+}
+
+.lm_item {
+    transition: width 0.3s ease !important;
+}
+
+/* Ensure equal widths in diff view */
+.lm_row > .lm_item {
+    width: 50% !important;
+    min-width: 50% !important;
+    max-width: 50% !important;
+    flex: 1 1 50% !important;
+}
+
+/* Force equal distribution in code mode */
+.code-mode-active .lm_row {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+}
+
+.code-mode-active .lm_item[data-id="source"],
+.code-mode-active .lm_item[data-id="optimized"] {
+    width: 50% !important;
+    min-width: 50% !important;
+    max-width: 50% !important;
+    flex: 1 1 50% !important;
+}
+
+/* Code Mode Messages */
+.code-mode-suggestion {
+    background: #1e1e1e !important;
+    border: 1px solid #333 !important;
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 6px !important;
+}
+
+.suggestion-summary {
+    margin-bottom: 16px !important;
+}
+
+.suggestion-summary h3 {
+    color: #fff !important;
+    margin: 0 0 8px 0 !important;
+}
+
+.suggestion-changes {
+    background: #252526 !important;
+    padding: 12px !important;
+    border-radius: 4px !important;
+    margin-bottom: 16px !important;
+}
+
+.suggestion-changes h4 {
+    color: #fff !important;
+    margin: 0 0 12px 0 !important;
+}
+
+.change-item {
+    margin-bottom: 12px !important;
+    padding-bottom: 12px !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+.change-item:last-child {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+}
+
+.change-line {
+    color: #858585 !important;
+    font-size: 12px !important;
+    margin-bottom: 4px !important;
+}
+
+.change-old, .change-new {
+    padding: 4px 8px !important;
+    border-radius: 3px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 12px !important;
+}
+
+.change-old {
+    background: rgba(255, 88, 88, 0.1) !important;
+    margin-bottom: 4px !important;
+}
+
+.change-new {
+    background: rgba(88, 255, 88, 0.1) !important;
+}
+
+.removed-marker {
+    color: #ff5858 !important;
+    margin-right: 8px !important;
+}
+
+.added-marker {
+    color: #58ff58 !important;
+    margin-right: 8px !important;
+}
+
+.change-explanation {
+    color: #858585 !important;
+    font-size: 12px !important;
+    margin-top: 8px !important;
+    padding-left: 8px !important;
+    border-left: 2px solid #333 !important;
+}
+
+.code-mode-actions {
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 16px !important;
+}
+
+.approve-button, .reject-button {
+    padding: 6px 12px !important;
+    border-radius: 3px !important;
+    font-size: 12px !important;
+    cursor: pointer !important;
+    border: none !important;
+    outline: none !important;
+}
+
+.approve-button {
+    background: #58ff58 !important;
+    color: #000 !important;
+}
+
+.reject-button {
+    background: #ff5858 !important;
+    color: #fff !important;
+}
+
+.approve-button:hover {
+    background: #4adb4a !important;
+}
+
+.reject-button:hover {
+    background: #db4a4a !important;
+}
+
+/* Dynamic column layout */
+.lm_row > .lm_item {
+    transition: width 0.3s ease-in-out;
+}
+
+.code-mode-active .lm_item[data-id="source"],
+.code-mode-active .lm_item[data-id="optimized"] {
+    min-width: 35% !important;
+    max-width: 65% !important;
+}
+
+.code-mode-active .lm_item[data-id="source"] {
+    margin-right: 8px;
+}
+
+.code-mode-suggestion {
+    background: #1e1e1e;
+    border: 1px solid #4B4BF7;
+    padding: 16px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.suggestion-changes {
+    margin-top: 16px;
+    padding: 8px;
+    background: #252526;
+    border-radius: 4px;
+}
+
+/* Smooth layout transitions */
+.lm_goldenlayout {
+    transition: all 0.3s ease-in-out;
 }
 
 .code-mode-container {

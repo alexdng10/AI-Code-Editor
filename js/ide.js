@@ -1,4 +1,4 @@
-import { IS_PUTER } from "./puter.js";
+    import { IS_PUTER } from "./puter.js";
 import { ChatInterface } from "./chat-interface.js";
 import { CodeModeManager } from "./code-mode.js";
 
@@ -62,14 +62,17 @@ var layoutConfig = {
             type: "column",
             width: 70,
             content: [{
-                type: "component",
-                componentName: "source",
-                id: "source",
-                title: "main.cpp",
-                isClosable: false,
-                componentState: {
-                    readOnly: false
-                }
+                type: "stack",
+                content: [{
+                    type: "component",
+                    componentName: "source",
+                    id: "source",
+                    title: "main.cpp",
+                    isClosable: false,
+                    componentState: {
+                        readOnly: false
+                    }
+                }]
             }]
         }, {
             type: "column",
@@ -616,54 +619,113 @@ document.addEventListener("DOMContentLoaded", async function () {
                 const { suggestions, diffView } = e.detail;
                 
                 if (suggestions && diffView) {
-                    // Get the source column
-                    const sourceColumn = layout.root.getItemsById('source')[0].parent;
+                    // Get the source container and its parent column
+                    const sourceContainer = layout.root.getItemsById('source')[0];
+                    const sourceColumn = sourceContainer.parent;
                     
-                    // Check if optimized component already exists
-                    let optimizedComponent = layout.root.getItemsById('optimized')[0];
-                    
-                    if (!optimizedComponent) {
-                        // Create new optimized component next to source
-                        const optimizedConfig = {
+                    // Create a new row for side-by-side diff with fixed widths
+                    const diffRow = {
+                        type: 'row',
+                        content: [{
+                            type: 'component',
+                            componentName: 'source',
+                            id: 'source',
+                            title: 'Original',
+                            width: 50,
+                            componentState: {
+                                readOnly: false
+                            }
+                        }, {
                             type: 'component',
                             componentName: 'optimized',
                             id: 'optimized',
-                            title: 'Optimized Code',
+                            title: 'Optimized',
+                            width: 50,
                             componentState: {
                                 readOnly: true
                             }
-                        };
-                        
-                        // Add optimized component next to source
-                        sourceColumn.parent.addChild(optimizedConfig);
-                        optimizedComponent = layout.root.getItemsById('optimized')[0];
-                        
-                        // Adjust column widths
-                        sourceColumn.setSize(35);
-                        optimizedComponent.parent.setSize(35);
-                    }
+                        }]
+                    };
+
+                    // Replace the source container with the diff row
+                    sourceColumn.replaceChild(sourceContainer, diffRow);
                     
+                    // Force equal widths by directly setting the item configs
+                    const optimizedComponent = layout.root.getItemsById('optimized')[0];
+                    const newSourceComponent = layout.root.getItemsById('source')[0];
+                    
+                    optimizedComponent.config.width = 50;
+                    newSourceComponent.config.width = 50;
+                    
+                    // Update the layout to reflect the new configuration
+                    layout.updateSize(true);
+                    
+                    // Sync scroll positions
+                    sourceEditor.onDidScrollChange((e) => {
+                        if (optimizedEditor) {
+                            optimizedEditor.setScrollPosition({
+                                scrollTop: e.scrollTop,
+                                scrollLeft: e.scrollLeft
+                            });
+                        }
+                    });
+                    
+                    optimizedEditor.onDidScrollChange((e) => {
+                        if (sourceEditor) {
+                            sourceEditor.setScrollPosition({
+                                scrollTop: e.scrollTop,
+                                scrollLeft: e.scrollLeft
+                            });
+                        }
+                    });
+                    
+                    // Force layout update
+                    layout.updateSize();
                     // Update optimized editor content
                     optimizedEditor.setValue(diffView.optimized.code);
                     monaco.editor.setModelLanguage(optimizedEditor.getModel(), diffView.optimized.language);
                     
                     // Add decorations for changes
-                    const decorations = diffView.changes.map(change => ({
-                        range: new monaco.Range(
-                            change.lineNumber,
-                            1,
-                            change.lineNumber,
-                            1
-                        ),
-                        options: {
-                            isWholeLine: true,
-                            className: 'line-modified',
-                            glyphMarginClassName: 'glyph-modified'
-                        }
-                    }));
+                    const sourceDecorations = [];
+                    const optimizedDecorations = [];
                     
-                    sourceEditor.deltaDecorations([], decorations);
-                    optimizedEditor.deltaDecorations([], decorations);
+                    diffView.changes.forEach(change => {
+                        // Add decoration for source (old code)
+                        sourceDecorations.push({
+                            range: new monaco.Range(
+                                change.lineNumber,
+                                1,
+                                change.lineNumber,
+                                1
+                            ),
+                            options: {
+                                isWholeLine: true,
+                                className: 'line-removed',
+                                glyphMarginClassName: 'glyph-removed',
+                                linesDecorationsClassName: 'line-removed-margin'
+                            }
+                        });
+                        
+                        // Add decoration for optimized (new code)
+                        optimizedDecorations.push({
+                            range: new monaco.Range(
+                                change.lineNumber,
+                                1,
+                                change.lineNumber,
+                                1
+                            ),
+                            options: {
+                                isWholeLine: true,
+                                className: 'line-added',
+                                glyphMarginClassName: 'glyph-added',
+                                linesDecorationsClassName: 'line-added-margin'
+                            }
+                        });
+                    });
+                    
+                    // Apply decorations
+                    sourceEditor.deltaDecorations([], sourceDecorations);
+                    optimizedEditor.deltaDecorations([], optimizedDecorations);
                 }
             });
 
@@ -675,9 +737,27 @@ document.addEventListener("DOMContentLoaded", async function () {
                     optimizedComponent.parent.remove();
                 }
                 
-                // Reset source column width
-                const sourceColumn = layout.root.getItemsById('source')[0].parent;
-                sourceColumn.setSize(70);
+                // Get the current source component
+                const sourceComponent = layout.root.getItemsById('source')[0];
+                const diffRow = sourceComponent.parent;
+                const mainColumn = diffRow.parent;
+                
+                // Create new source component
+                const newSourceComponent = {
+                    type: 'component',
+                    componentName: 'source',
+                    id: 'source',
+                    title: 'main.cpp',
+                    componentState: {
+                        readOnly: false
+                    }
+                };
+                
+                // Replace the diff row with the single source component
+                mainColumn.replaceChild(diffRow, newSourceComponent);
+                
+                // Force layout update
+                layout.updateSize();
                 
                 // Reset decorations
                 sourceEditor.deltaDecorations([], []);
