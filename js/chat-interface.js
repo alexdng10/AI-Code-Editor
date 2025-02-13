@@ -38,13 +38,28 @@ export class ChatInterface {
                 </div>
                 <div class="chat-input-container">
                     <textarea class="chat-input" placeholder="Type your question here..."></textarea>
-                    <button class="chat-send-button">Send</button>
+                    <div class="chat-input-actions">
+                        <span class="toggle-label">Code Mode</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" class="code-mode-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <button class="chat-send-button">Send</button>
+                    </div>
                 </div>
             </div>
         `;
 
         this.messagesContainer = this.container.querySelector('.chat-messages');
-        
+        // Add toggle button handler
+        // Add toggle button handler
+        const toggleButton = this.container.querySelector('.code-mode-toggle');
+        if (toggleButton) {
+            toggleButton.addEventListener('change', (e) => {
+                this.codeModeEnabled = e.target.checked;
+                console.log('Code mode:', this.codeModeEnabled);
+            });
+        }
         // Add change key button handler
         const changeKeyButton = this.container.querySelector('.code-assistant-button');
         changeKeyButton.addEventListener('click', () => {

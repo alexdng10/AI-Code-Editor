@@ -851,3 +851,84 @@ strong {
     line-height: 1.5 !important;
     min-height: auto !important;
 }
+/* Remove the toggle from header buttons */
+.code-mode-toggle {
+    display: none;  /* Hide the old button */
+}
+
+/* New toggle switch container */
+.chat-input-container {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    background: #252526;
+    border-top: 1px solid #333;
+}
+
+/* Input and buttons row */
+.chat-input-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Toggle switch styling */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 46px;
+    height: 24px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #333;
+    transition: .2s;
+    border-radius: 24px;
+    border: 1px solid #444;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #fff;
+    transition: .2s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #4B4BF7;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+}
+
+/* Label styling */
+.toggle-label {
+    color: #d4d4d4;
+    font-size: 12px;
+    margin-right: 8px;
+    user-select: none;
+}
+
+/* Adjust send button layout */
+.chat-send-button {
+    margin-left: auto;  /* Push to right */
+}
