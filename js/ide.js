@@ -1,4 +1,19 @@
-    import { IS_PUTER } from "./puter.js";
+// Polyfill for crypto.randomUUID if not available
+const generateUUID = function() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+};
+
+const getRandomUUID = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+        return crypto.randomUUID();
+    }
+    return generateUUID();
+};
+
+import { IS_PUTER } from "./puter.js";
 import { ChatInterface } from "./chat-interface.js";
 import { CodeModeManager } from "./code-mode.js";
 
@@ -625,7 +640,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     const originalContent = sourceEditor.getValue();
                     const originalState = sourceEditor.saveViewState();
                     
-                    // Create a new row for side-by-side diff with fixed widths
+                    // Create a new row for side-by-side diff
                     const diffRow = {
                         type: 'row',
                         content: [{
@@ -633,7 +648,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                             componentName: 'source',
                             id: 'source',
                             title: 'Original',
-                            width: 50,
                             componentState: {
                                 readOnly: false
                             }
@@ -642,7 +656,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                             componentName: 'optimized',
                             id: 'optimized',
                             title: 'Optimized',
-                            width: 50,
                             componentState: {
                                 readOnly: true
                             }
@@ -652,15 +665,21 @@ document.addEventListener("DOMContentLoaded", async function () {
                     // Replace the source container with the diff row
                     sourceColumn.replaceChild(sourceContainer, diffRow);
                     
-                    // Force equal widths by directly setting the item configs
-                    const optimizedComponent = layout.root.getItemsById('optimized')[0];
-                    const newSourceComponent = layout.root.getItemsById('source')[0];
-                    
-                    optimizedComponent.config.width = 50;
-                    newSourceComponent.config.width = 50;
-                    
-                    // Update the layout to reflect the new configuration
-                    layout.updateSize(true);
+                    // Force layout update with equal widths
+                    setTimeout(() => {
+                        const optimizedComponent = layout.root.getItemsById('optimized')[0];
+                        const newSourceComponent = layout.root.getItemsById('source')[0];
+                        
+                        if (optimizedComponent && newSourceComponent) {
+                            const parentWidth = optimizedComponent.parent.container.width;
+                            const halfWidth = parentWidth / 2;
+                            
+                            optimizedComponent.container.setSize(halfWidth, optimizedComponent.container.height);
+                            newSourceComponent.container.setSize(halfWidth, newSourceComponent.container.height);
+                            
+                            layout.updateSize(true);
+                        }
+                    }, 100);
                     
                     // Restore original content and state
                     sourceEditor.setValue(originalContent);
@@ -742,47 +761,46 @@ document.addEventListener("DOMContentLoaded", async function () {
                 // Store current content and scroll state
                 const currentContent = sourceEditor.getValue();
                 const scrollState = sourceEditor.saveViewState();
-                
-                // Find and remove optimized component if it exists
-                const optimizedComponent = layout.root.getItemsById('optimized')[0];
-                if (optimizedComponent) {
-                    optimizedComponent.parent.remove();
-                }
-                
-                // Get the current source component
-                const sourceComponent = layout.root.getItemsById('source')[0];
-                const diffRow = sourceComponent.parent;
-                const mainColumn = diffRow.parent;
-                
-                // Create new source component with original layout
-                const newSourceComponent = {
-                    type: 'component',
-                    componentName: 'source',
-                    id: 'source',
-                    title: 'main.cpp',
-                    width: 70,
-                    componentState: {
-                        readOnly: false
+
+                // Find the diff row if it exists
+                const diffRow = layout.root.getItemsById('source')[0]?.parent;
+                if (diffRow) {
+                    const mainColumn = diffRow.parent;
+                    if (mainColumn) {
+                        // Remove all components in the diff row
+                        while (diffRow.contentItems.length > 0) {
+                            diffRow.removeChild(diffRow.contentItems[0]);
+                        }
+
+                        // Create new source component
+                        const newSourceComponent = {
+                            type: 'component',
+                            componentName: 'source',
+                            id: 'source',
+                            title: 'main.cpp',
+                            componentState: {
+                                readOnly: false
+                            }
+                        };
+
+                        // Replace the diff row with the source component
+                        mainColumn.replaceChild(diffRow, newSourceComponent);
+
+                        // Force layout update
+                        setTimeout(() => {
+                            // Restore content and scroll state
+                            sourceEditor.setValue(currentContent);
+                            sourceEditor.restoreViewState(scrollState);
+
+                            // Reset decorations
+                            sourceEditor.deltaDecorations([], []);
+                            
+                            // Update layout
+                            mainColumn.setSize(70);
+                            layout.updateSize(true);
+                        }, 100);
                     }
-                };
-                
-                // Replace the diff row with the single source component
-                mainColumn.replaceChild(diffRow, newSourceComponent);
-                
-                // Force layout update
-                layout.updateSize();
-                
-                // Restore content and scroll state
-                sourceEditor.setValue(currentContent);
-                sourceEditor.restoreViewState(scrollState);
-                
-                // Reset decorations
-                sourceEditor.deltaDecorations([], []);
-                optimizedEditor.setValue('');
-                
-                // Update layout with original proportions
-                mainColumn.setSize(70);
-                layout.updateSize(true);
+                }
             });
 
             // Listen for code mode actions (apply/reject)
