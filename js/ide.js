@@ -68,31 +68,40 @@ var languages = {};
 
 var layoutConfig = {
     settings: {
-        showPopoutIcon: false,
-        reorderEnabled: true,
-        showMaximiseIcon: false
+      showPopoutIcon: false,
+      reorderEnabled: true,
+      showMaximiseIcon: false
     },
-    content: [{
+    content: [
+      {
         type: "row",
-        content: [{
+        content: [
+          {
             type: "column",
             width: 70,
-            content: [{
+            content: [
+              {
                 type: "component",
                 componentName: "source",
                 id: "source",
                 title: "main.cpp",
                 isClosable: false,
                 componentState: {
-                    readOnly: false
+                  readOnly: false
                 }
-            }]
-        }, {
+              }
+            ]
+          },
+          {
             type: "column",
             width: 30,
-            content: [{
+            content: [
+              // The Input+Output row uses ~60% of its column's height
+              {
                 type: "row",
-                content: [{
+                height: 50,
+                content: [
+                  {
                     type: "component",
                     componentName: "stdin",
                     width: 50,
@@ -100,9 +109,10 @@ var layoutConfig = {
                     title: "Input",
                     isClosable: false,
                     componentState: {
-                        readOnly: false
+                      readOnly: false
                     }
-                }, {
+                  },
+                  {
                     type: "component",
                     componentName: "stdout",
                     width: 50,
@@ -110,18 +120,26 @@ var layoutConfig = {
                     title: "Output",
                     isClosable: false,
                     componentState: {
-                        readOnly: true
+                      readOnly: true
                     }
-                }]
-            }, {
+                  }
+                ]
+              },
+              // The Chat component uses the remaining ~40% vertical space
+              {
                 type: "component",
                 componentName: "chat",
+                id: "chat",
                 title: "Code Assistant",
-                isClosable: false
-            }]
-        }]
-    }]
-};
+                isClosable: false,
+                height: 50
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  };
 
 var gPuterFile;
 

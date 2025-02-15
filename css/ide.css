@@ -1,343 +1,283 @@
-    .judge0-file-menu {
-    min-width: 15rem !important;
-}
-
-#judge0-status-line {
-    font-family: "JetBrains Mono" !important;
-}
-
-#judge0-status-line:empty {
-    display: none;
+/*---------------------------
+  Base Resets/General
+---------------------------*/
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* So layout can fill entire window */
 }
 
 .judge0-hidden {
-    display: none !important;
+  display: none !important;
 }
 
-/* Code Mode Layout */
-.line-removed {
-    background-color: rgba(255, 88, 88, 0.1) !important;
-    border-left: 3px solid #ff5858 !important;
+/* Adjust container to fill screen minus any top navigation, if needed */
+#judge0-site-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
 }
 
-.line-added {
-    background-color: rgba(88, 255, 88, 0.1) !important;
-    border-left: 3px solid #58ff58 !important;
+/* If there's a top nav (#judge0-site-navigation), ensure you subtract its height in JS or with calc() */
+/*
+#judge0-site-content {
+  height: calc(100% - var(--some-nav-height));
+}
+*/
+
+/*---------------------------
+  Status Line
+---------------------------*/
+#judge0-status-line {
+  font-family: "JetBrains Mono", monospace;
+  padding: 4px 8px;
+  background: #1e1e1e;
+  color: #ccc;
 }
 
-.glyph-removed {
-    background-color: #ff5858 !important;
-    width: 3px !important;
-    margin-left: 5px !important;
+#judge0-status-line:empty {
+  display: none;
 }
 
-.glyph-added {
-    background-color: #58ff58 !important;
-    width: 3px !important;
-    margin-left: 5px !important;
-}
+/*---------------------------
+  GoldenLayout / Core Layout
+---------------------------*/
 
-.line-removed-margin {
-    background-color: rgba(255, 88, 88, 0.3) !important;
-}
-
-.line-added-margin {
-    background-color: rgba(88, 255, 88, 0.3) !important;
-}
-
-/* Side-by-side diff view */
-.lm_content {
-    position: relative !important;
-    overflow: hidden !important;
-}
-
-/* Editor containers */
-.lm_item[title="Original"],
-.lm_item[title="Optimized"] {
-    width: 50% !important;
-    min-width: 50% !important;
-    max-width: 50% !important;
-    flex: 0 0 50% !important;
-    height: 100% !important;
-    position: relative !important;
-}
-
-/* Editor instances */
-.lm_item[title="Original"] .monaco-editor,
-.lm_item[title="Optimized"] .monaco-editor {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-}
-
-/* Visual separation */
-.lm_item[title="Original"] {
-    border-right: 1px solid #333 !important;
-}
-
-/* Layout container */
+/* Root GoldenLayout container: let it fill #judge0-site-content */
 .lm_goldenlayout {
-    width: 100% !important;
-    height: 100% !important;
-    position: relative !important;
+  width: 100%;
+  height: 100%;
+  position: relative; 
 }
 
-/* Row container */
-.lm_row {
-    display: flex !important;
-    flex-direction: row !important;
-    width: 100% !important;
-    height: 100% !important;
+/* Let GoldenLayout manage row/column sizing. Avoid forcing explicit heights. */
+.lm_row,
+.lm_column,
+.lm_content,
+.lm_item,
+.lm_stack {
+  min-height: 0; /* important so flex can shrink properly */
 }
 
-/* Splitter */
+/* The .lm_content often wraps the actual component area. Keep overflow minimal. */
+.lm_content {
+  position: relative;
+  overflow: hidden;
+}
+
+/* The main splitter between columns/rows */
 .lm_splitter {
-    width: 1px !important;
-    background: #333 !important;
-    transition: none !important;
+  background: #333;
+  transition: none;
 }
 
-/* Ensure proper sizing */
+/* Hide popout and close icons if desired; or let your JS config do it. */
+.lm_controls .lm_popout,
+.lm_controls .lm_close {
+  display: none !important;
+}
+
+/*---------------------------
+  Monaco Editors
+---------------------------*/
+
+/* Expand the monaco editor to fill its parent container fully */
 .monaco-editor,
 .monaco-editor .overflow-guard {
-    width: 100% !important;
-    height: 100% !important;
+  width: 100%;
+  height: 100%;
 }
 
-/* Prevent overflow */
-.monaco-scrollable-element {
-    width: 100% !important;
-    height: 100% !important;
-    overflow: hidden !important;
+/* Minimaps, scrollbars, etc. can be further styled if you like. */
+
+/*---------------------------
+  Code Mode / Diff Styles
+---------------------------*/
+
+/* Highlight lines that were removed vs added */
+.line-removed {
+  background-color: rgba(255, 88, 88, 0.1);
+  border-left: 3px solid #ff5858;
+}
+.line-added {
+  background-color: rgba(88, 255, 88, 0.1);
+  border-left: 3px solid #58ff58;
 }
 
-/* Code Mode Messages */
+/* Margins/glyphs to show in the editor gutter */
+.glyph-removed {
+  background-color: #ff5858;
+  width: 3px;
+  margin-left: 5px;
+}
+.glyph-added {
+  background-color: #58ff58;
+  width: 3px;
+  margin-left: 5px;
+}
+.line-removed-margin {
+  background-color: rgba(255, 88, 88, 0.3);
+}
+.line-added-margin {
+  background-color: rgba(88, 255, 88, 0.3);
+}
+
+/* For side‐by‐side (Original vs Optimized) layout */
+.lm_item[title="Original"] {
+  border-right: 1px solid #333;
+}
+.lm_item[title="Original"],
+.lm_item[title="Optimized"] {
+  position: relative;
+  width: 50%;
+  min-width: 50%;
+  max-width: 50%;
+  flex: 0 0 50%;
+  height: 100%;
+}
+.lm_item[title="Original"] .monaco-editor,
+.lm_item[title="Optimized"] .monaco-editor {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/*---------------------------
+  Code Mode Suggestion Boxes
+---------------------------*/
 .code-mode-suggestion {
-    background: #1e1e1e !important;
-    border: 1px solid #333 !important;
-    padding: 16px !important;
-    margin-bottom: 16px !important;
-    border-radius: 6px !important;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  padding: 16px;
+  margin-bottom: 16px;
+  border-radius: 6px;
 }
-
-.suggestion-summary {
-    margin-bottom: 16px !important;
-}
-
 .suggestion-summary h3 {
-    color: #fff !important;
-    margin: 0 0 8px 0 !important;
+  color: #fff;
+  margin: 0 0 8px 0;
 }
-
 .suggestion-changes {
-    background: #252526 !important;
-    padding: 12px !important;
-    border-radius: 4px !important;
-    margin-bottom: 16px !important;
+  background: #252526;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
 }
-
-.suggestion-changes h4 {
-    color: #fff !important;
-    margin: 0 0 12px 0 !important;
-}
-
 .change-item {
-    margin-bottom: 12px !important;
-    padding-bottom: 12px !important;
-    border-bottom: 1px solid #333 !important;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #333;
 }
-
 .change-item:last-child {
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
-    border-bottom: none !important;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
 }
-
 .change-line {
-    color: #858585 !important;
-    font-size: 12px !important;
-    margin-bottom: 4px !important;
+  color: #858585;
+  font-size: 12px;
+  margin-bottom: 4px;
+  font-family: "JetBrains Mono", monospace;
 }
-
-.change-old, .change-new {
-    padding: 4px 8px !important;
-    border-radius: 3px !important;
-    font-family: 'JetBrains Mono', monospace !important;
-    font-size: 12px !important;
-}
-
-.change-old {
-    background: rgba(255, 88, 88, 0.1) !important;
-    margin-bottom: 4px !important;
-}
-
+.change-old,
 .change-new {
-    background: rgba(88, 255, 88, 0.1) !important;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
 }
-
+.change-old {
+  background: rgba(255, 88, 88, 0.1);
+  margin-bottom: 4px;
+}
+.change-new {
+  background: rgba(88, 255, 88, 0.1);
+}
 .removed-marker {
-    color: #ff5858 !important;
-    margin-right: 8px !important;
+  color: #ff5858;
+  margin-right: 8px;
 }
-
 .added-marker {
-    color: #58ff58 !important;
-    margin-right: 8px !important;
+  color: #58ff58;
+  margin-right: 8px;
 }
-
 .change-explanation {
-    color: #858585 !important;
-    font-size: 12px !important;
-    margin-top: 8px !important;
-    padding-left: 8px !important;
-    border-left: 2px solid #333 !important;
+  color: #858585;
+  font-size: 12px;
+  margin-top: 8px;
+  padding-left: 8px;
+  border-left: 2px solid #333;
 }
-
 .code-mode-actions {
-    display: flex !important;
-    gap: 8px !important;
-    margin-top: 16px !important;
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
 }
-
-.approve-button, .reject-button {
-    padding: 6px 12px !important;
-    border-radius: 3px !important;
-    font-size: 12px !important;
-    cursor: pointer !important;
-    border: none !important;
-    outline: none !important;
-}
-
-.approve-button {
-    background: #58ff58 !important;
-    color: #000 !important;
-}
-
+.approve-button,
 .reject-button {
-    background: #ff5858 !important;
-    color: #fff !important;
+  padding: 6px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  outline: none;
 }
-
+.approve-button {
+  background: #58ff58;
+  color: #000;
+}
 .approve-button:hover {
-    background: #4adb4a !important;
+  background: #4adb4a;
 }
-
+.reject-button {
+  background: #ff5858;
+  color: #fff;
+}
 .reject-button:hover {
-    background: #db4a4a !important;
+  background: #db4a4a;
 }
 
-/* Layout transitions */
-.lm_goldenlayout {
-    transition: none !important;
-}
-
-/* Container styles */
+/*---------------------------
+  Code Mode Container Layout
+---------------------------*/
 .code-mode-container {
-    display: flex !important;
-    flex-direction: row !important;
-    height: 100% !important;
-    width: 100% !important;
-    background-color: #1e1e1e !important;
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  background-color: #1e1e1e;
 }
-
-/* Editor pane */
 .code-editor-pane {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    border-right: 1px solid #333 !important;
-    min-width: 0 !important;
-    position: relative !important;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
 }
-
-/* Editor header */
 .code-editor-header {
-    padding: 8px !important;
-    background-color: #252526 !important;
-    border-bottom: 1px solid #333 !important;
-    color: #fff !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    z-index: 1 !important;
+  padding: 8px;
+  background-color: #252526;
+  border-bottom: 1px solid #333;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 1;
 }
-
-/* Editor content */
 .code-editor-content {
-    flex: 1 !important;
-    overflow: hidden !important;
-    position: relative !important;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
 }
 
-/* Diff View Styles */
-.diff-line {
-    display: flex;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 12px;
-    line-height: 1.5;
-    white-space: pre;
-}
-
-.diff-line-number {
-    padding: 0 8px;
-    border-right: 1px solid #333;
-    color: #858585;
-    user-select: none;
-    text-align: right;
-    min-width: 40px;
-}
-
-.diff-line-content {
-    padding: 0 8px;
-    flex: 1;
-}
-
-.diff-line.removed {
-    background-color: rgba(255, 0, 0, 0.1);
-}
-
-.diff-line.added {
-    background-color: rgba(0, 255, 0, 0.1);
-}
-
-/* Code Mode Controls */
-.code-mode-controls {
-    padding: 8px;
-    background-color: #252526;
-    border-top: 1px solid #333;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-
-.code-mode-button {
-    padding: 4px 12px;
-    border-radius: 3px;
-    font-size: 12px;
-    cursor: pointer;
-    border: 1px solid #333;
-    background-color: #333;
-    color: #fff;
-}
-
-.code-mode-button:hover {
-    background-color: #444;
-}
-
-.code-mode-button.primary {
-    background-color: #0078d4;
-    border-color: #0078d4;
-}
-
-.code-mode-button.primary:hover {
-    background-color: #006abc;
-}
-
+/*---------------------------
+  In-case of Standalone mode
+---------------------------*/
 @media (display-mode: standalone) {
-    .judge0-standalone-hidden {
-        display: none !important;
-    }
+  .judge0-standalone-hidden {
+    display: none !important;
+  }
 }
